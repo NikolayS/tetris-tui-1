@@ -31,9 +31,13 @@ impl<R: rand::RngCore> Bag<R> {
     }
 
     /// Refill the pending buffer with a freshly shuffled batch.
+    ///
+    /// The batch is reversed after shuffle so that `pop()` (O(1)) returns
+    /// pieces in the shuffled order instead of `remove(0)` (O(n)).
     fn refill(&mut self) {
         let mut batch = ALL_PIECES;
         batch.shuffle(&mut self.rng);
+        batch.reverse();
         self.pending.extend_from_slice(&batch);
     }
 }
@@ -49,8 +53,8 @@ impl<R: rand::RngCore> Iterator for Bag<R> {
         if self.pending.is_empty() {
             self.refill();
         }
-        // pending is non-empty; pop from the front so pieces emerge in
-        // the shuffled order.
-        Some(self.pending.remove(0))
+        // pending is non-empty; pop from the back (O(1)) — the batch was
+        // reversed after shuffle so tail == front of shuffled order.
+        Some(self.pending.pop().unwrap())
     }
 }

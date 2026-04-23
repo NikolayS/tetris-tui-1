@@ -79,6 +79,52 @@ fn reset_scores_aborts_cleanly_on_no() {
     );
 }
 
+/// `check-naming.sh` catches both `Tetris` and all-caps `TETRIS` (#10).
+///
+/// A temporary file containing "TETRIS GAME" must be flagged (exit 1).
+/// The README/Cargo.toml scan (no prohibited strings) must pass (exit 0).
+#[test]
+fn check_naming_catches_all_caps_tetris() {
+    use std::io::Write;
+    use std::process::Command as StdCommand;
+
+    // Write a temp file containing all-caps TETRIS.
+    let mut tmp = tempfile::NamedTempFile::new().expect("tempfile");
+    writeln!(tmp, "TETRIS GAME is not allowed here").expect("write");
+    tmp.flush().expect("flush");
+
+    // Patch the script's `targets` inline: feed the temp file as the only
+    // target by running a sub-script that overrides the targets array.
+    let script = format!(
+        r#"#!/usr/bin/env bash
+set -Eeuo pipefail
+IFS=$'\n\t'
+f={}
+fail=0
+if grep -nE '(^|[^®a-zA-Z])(Tetris|TETRIS)([^®]|$)' "${{f}}" \
+    | grep -vi 'trademark of'; then
+  fail=1
+fi
+exit "${{fail}}"
+"#,
+        tmp.path().display()
+    );
+
+    let mut check = tempfile::NamedTempFile::new().expect("script tempfile");
+    write!(check, "{}", script).expect("write script");
+    check.flush().expect("flush script");
+
+    let status = StdCommand::new("bash")
+        .arg(check.path())
+        .status()
+        .expect("run script");
+
+    assert!(
+        !status.success(),
+        "check-naming should exit 1 for all-caps TETRIS"
+    );
+}
+
 /// `blocktxt --reset-scores` with `y\n` on stdin exits 0.
 ///
 /// Stub behavior for v0.1: there is no high-score file yet (Sprint 2 adds

@@ -27,8 +27,8 @@ pub enum PersistenceError {
     NoHome,
     #[error("data directory is a symlink — refusing (possible attack)")]
     UnsafeSymlink,
-    #[error("data directory is world-writable — refusing")]
-    WorldWritable,
+    #[error("data directory has unsafe group/other permissions — refusing")]
+    UnsafeGroupOrOther,
     #[error("data directory is owned by another user")]
     WrongOwner,
     #[error("I/O error: {0}")]
@@ -105,6 +105,10 @@ pub fn init_data_dir() -> Result<PathBuf, PersistenceError> {
 
     if !data_dir.exists() {
         create_dir_mode_0700(data_dir)?;
+        // Re-check after creation to close the TOCTOU window between
+        // exists() and create_dir_all — a racing attacker could place a
+        // symlink in that gap.
+        check_dir_safety(data_dir)?;
         return Ok(data_dir.canonicalize()?);
     }
 
@@ -148,9 +152,9 @@ pub fn check_dir_safety(path: &Path) -> Result<(), PersistenceError> {
     {
         use std::os::unix::fs::MetadataExt;
 
-        // 2. World-writable check.
-        if meta.mode() & 0o002 != 0 {
-            return Err(PersistenceError::WorldWritable);
+        // 2. Group+other permissions check (SPEC §4: mode & 0o077 == 0).
+        if meta.mode() & 0o077 != 0 {
+            return Err(PersistenceError::UnsafeGroupOrOther);
         }
 
         // 3. Owner check.
@@ -261,15 +265,17 @@ pub fn load(dir: &Path) -> Result<HighScoreStore, PersistenceError> {
     }
 }
 
-/// Returns a path like `<base>.corrupt.<ts>`, guaranteeing it does not
-/// already exist.  If a collision occurs at second granularity, a
-/// nanosecond suffix is appended.
+/// Returns a path like `<base>.corrupt.<ts>` that does not already exist.
+///
+/// Strategy: try `<stem>.<secs>` first; on collision loop with a counter
+/// suffix (`<stem>.<secs>-<n>` for n = 1, 2, …) until a unique path is
+/// found.  This eliminates the same-nanosecond overwrite window that the
+/// old two-attempt scheme left open.
 pub fn unique_corrupt_path(base: &Path) -> PathBuf {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default();
     let secs = now.as_secs();
-    let nanos = now.subsec_nanos();
 
     // Build the parent stem: "<base>.corrupt"
     let stem = format!("{}.corrupt", base.display());
@@ -279,8 +285,15 @@ pub fn unique_corrupt_path(base: &Path) -> PathBuf {
         return candidate;
     }
 
-    // Collision — append nanoseconds.
-    PathBuf::from(format!("{stem}.{secs}-{nanos}"))
+    // Collision — loop with an incrementing counter suffix.
+    let mut counter: u64 = 1;
+    loop {
+        let candidate = PathBuf::from(format!("{stem}.{secs}-{counter}"));
+        if !candidate.exists() {
+            return candidate;
+        }
+        counter += 1;
+    }
 }
 
 /// Keeps at most 5 `.corrupt.*` backups, deleting the oldest by mtime.

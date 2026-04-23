@@ -4,7 +4,7 @@
 //! via `Arc<Mutex<_>>` internally; we advance it before each `step` call.
 
 use blocktxt::clock::FakeClock;
-use blocktxt::game::rules::LOCK_DELAY;
+use blocktxt::game::rules::{LockState, LOCK_DELAY, RESET_CAP};
 use blocktxt::game::state::{Event, GameOverReason, GameState, Input, Phase};
 use std::time::{Duration, Instant};
 
@@ -326,9 +326,98 @@ fn hard_drop_scores_2_per_cell() {
     let _ = start_row;
 }
 
+// ── Restart seed reuse (#24) ─────────────────────────────────────────────────
+
+/// Restart with the original seed must produce the same first piece as a fresh
+/// GameState with the same seed.
+#[test]
+fn restart_reuses_original_seed() {
+    let seed = 42;
+    let (mut gs, _clock) = make_game(seed);
+
+    // Remember the first piece kind.
+    let first_kind_before = gs.active.unwrap().kind;
+
+    // Hard-drop several pieces to advance the bag, then Restart.
+    for _ in 0..5 {
+        gs.step(Duration::ZERO, &[Input::HardDrop]);
+    }
+    gs.step(Duration::ZERO, &[Input::Restart]);
+
+    // After Restart, the first piece must match the original first piece.
+    let first_kind_after = gs.active.unwrap().kind;
+    assert_eq!(
+        first_kind_after, first_kind_before,
+        "Restart must replay from the original seed"
+    );
+
+    // Seed field must be preserved.
+    assert_eq!(gs.seed, seed, "seed field must not change on Restart");
+}
+
+// ── airborne→ground reset consumption (#23) ───────────────────────────────────
+
+/// Re-grounding after being airborne must consume a reset (SPEC §4).
+///
+/// Approach: floor the piece, manually mark it airborne in the lock state,
+/// then step once more to re-ground it and inspect `resets_used`.
+#[test]
+fn reground_after_airborne_consumes_reset() {
+    let (mut gs, _clock) = make_game(42);
+
+    // Bring piece to floor with soft-drop.
+    gs.step(Duration::ZERO, &[Input::SoftDropOn]);
+    for _ in 0..50 {
+        let row_before = gs.active.map(|p| p.origin.1).unwrap_or(-1);
+        gs.step(Duration::from_millis(50), &[]);
+        let row_after = gs.active.map(|p| p.origin.1).unwrap_or(-1);
+        if row_after <= row_before {
+            break;
+        }
+    }
+    gs.step(Duration::ZERO, &[Input::SoftDropOff]);
+
+    // LockState should exist now (piece is grounded).
+    let resets_before = gs
+        .lock_state
+        .as_ref()
+        .expect("lock_state must exist when grounded")
+        .resets_used;
+
+    // Simulate lift: mark the piece airborne via lock_state.
+    gs.lock_state.as_mut().unwrap().airborne = true;
+
+    // One tick: check_lock sees airborne=true on re-grounding → consumes reset.
+    tick(&mut gs, Duration::from_millis(1));
+
+    let resets_after = gs
+        .lock_state
+        .as_ref()
+        .expect("lock_state still exists")
+        .resets_used;
+
+    assert_eq!(
+        resets_after,
+        resets_before + 1,
+        "re-grounding must consume exactly one reset"
+    );
+}
+
 // ── constant checks ───────────────────────────────────────────────────────────
 
 #[test]
 fn lock_delay_constant_is_500ms() {
     assert_eq!(LOCK_DELAY, Duration::from_millis(500));
+}
+
+#[test]
+fn reset_cap_constant_is_15() {
+    assert_eq!(RESET_CAP, 15);
+}
+
+#[test]
+fn lock_state_new_has_zero_resets() {
+    let ls = LockState::new();
+    assert_eq!(ls.resets_used, 0);
+    assert!(!ls.airborne);
 }

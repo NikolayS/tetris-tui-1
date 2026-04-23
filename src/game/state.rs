@@ -10,8 +10,8 @@
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
+use rand::rngs::StdRng;
 use rand::SeedableRng;
-use rand_chacha::ChaCha8Rng;
 
 use crate::clock::Clock;
 use crate::game::bag::Bag;
@@ -87,8 +87,12 @@ pub struct GameState {
     pub b2b_active: bool,
     pub phase: Phase,
 
-    bag: Bag<ChaCha8Rng>,
-    lock_state: Option<LockState>,
+    /// The seed this game was started with; reused on Restart so bag order
+    /// is reproducible (SPEC §4, #24).
+    pub seed: u64,
+
+    bag: Bag<StdRng>,
+    pub lock_state: Option<LockState>,
     soft_drop_held: bool,
     gravity_acc: Duration,
 
@@ -107,7 +111,7 @@ impl GameState {
     /// The clock is used to initialise the starting `Instant`; all timing
     /// thereafter uses the `dt` passed to `step`.
     pub fn new(seed: u64, clock: Box<dyn Clock>) -> Self {
-        let rng = ChaCha8Rng::seed_from_u64(seed);
+        let rng = StdRng::seed_from_u64(seed);
         let mut bag = Bag::new(rng);
 
         let mut next_queue: VecDeque<PieceKind> =
@@ -128,6 +132,7 @@ impl GameState {
             lines_cleared: 0,
             b2b_active: false,
             phase: Phase::Playing,
+            seed,
             bag,
             lock_state: None,
             soft_drop_held: false,
@@ -340,6 +345,12 @@ impl GameState {
         if grounded {
             let ls = self.lock_state.get_or_insert_with(LockState::new);
 
+            // Re-grounding after being airborne counts as a reset (SPEC §4).
+            if ls.airborne {
+                ls.airborne = false;
+                ls.reset_timer(); // consumes a reset slot, resets elapsed
+            }
+
             // If cap was already reached on a previous touch, lock now.
             if ls.is_capped() {
                 self.lock_piece(events);
@@ -351,8 +362,9 @@ impl GameState {
                 self.lock_piece(events);
             }
         } else {
-            // Airborne: pause the timer (preserve resets_used), zero elapsed.
+            // Airborne: mark as lifted, pause the timer (preserve resets_used).
             if let Some(ls) = &mut self.lock_state {
+                ls.airborne = true;
                 ls.elapsed = Duration::ZERO;
             }
         }
@@ -454,7 +466,8 @@ impl GameState {
     // ── Restart ──────────────────────────────────────────────────────────────
 
     fn restart(&mut self) {
-        let rng = ChaCha8Rng::seed_from_u64(0);
+        // Reuse the original seed so bag order is reproducible (#24).
+        let rng = StdRng::seed_from_u64(self.seed);
         let mut bag = Bag::new(rng);
         let mut next_queue: VecDeque<PieceKind> =
             (0..NEXT_QUEUE_LEN).map(|_| bag.next().unwrap()).collect();

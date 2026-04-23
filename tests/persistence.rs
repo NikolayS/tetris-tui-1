@@ -66,7 +66,7 @@ fn init_data_dir_refuses_symlink() {
     );
 }
 
-/// `check_dir_safety` must refuse a world-writable directory.
+/// `check_dir_safety` must refuse a world-writable directory (0o777).
 #[test]
 #[cfg(unix)]
 fn init_data_dir_refuses_world_writable() {
@@ -79,8 +79,29 @@ fn init_data_dir_refuses_world_writable() {
 
     let err = check_dir_safety(&dir).unwrap_err();
     assert!(
-        matches!(err, PersistenceError::WorldWritable),
+        matches!(err, PersistenceError::UnsafeGroupOrOther),
         "unexpected error: {err}"
+    );
+}
+
+/// `check_dir_safety` must refuse a dir at 0o755 (group-readable).
+///
+/// SPEC §4: `mode & 0o077 == 0` must hold. 0o755 has group+execute (0o055
+/// > 0) so it must be rejected even though it is not world-writable.
+#[test]
+#[cfg(unix)]
+fn init_data_dir_refuses_group_readable() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = tmp.path().join("grpread");
+    fs::create_dir(&dir).unwrap();
+    fs::set_permissions(&dir, fs::Permissions::from_mode(0o755)).unwrap();
+
+    let err = check_dir_safety(&dir).unwrap_err();
+    assert!(
+        matches!(err, PersistenceError::UnsafeGroupOrOther),
+        "0o755 dir should be rejected; got: {err}"
     );
 }
 
@@ -184,6 +205,34 @@ fn corrupt_backup_cap_at_5() {
         "expected exactly 5 backups, got {}: {backups:?}",
         backups.len()
     );
+}
+
+/// Collision loop: planting `<secs>` AND `<secs>-1` forces the counter to 2.
+///
+/// Verifies the loop-based dedup in `unique_corrupt_path` (closes #18).
+#[test]
+fn no_overwrite_corrupt_counter_loops_past_one() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = data_dir(&tmp);
+    create_dir_mode_0700(&dir).unwrap();
+
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
+    // Plant collisions at counter 0 (bare ts) and counter 1.
+    let base = dir.join("scores.json");
+    let c0 = dir.join(format!("scores.json.corrupt.{ts}"));
+    let c1 = dir.join(format!("scores.json.corrupt.{ts}-1"));
+    fs::write(&c0, b"old0").unwrap();
+    fs::write(&c1, b"old1").unwrap();
+
+    let result = persistence::unique_corrupt_path(&base);
+    // Must differ from both planted paths.
+    assert_ne!(result, c0, "must not reuse bare-ts path");
+    assert_ne!(result, c1, "must not reuse counter-1 path");
+    assert!(!result.exists(), "returned path must not already exist");
 }
 
 /// Two corruptions that occur within the same second must produce

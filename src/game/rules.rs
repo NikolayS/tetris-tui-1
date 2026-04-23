@@ -101,6 +101,9 @@ pub struct LockState {
     pub elapsed: Duration,
     /// How many grounded resets have been consumed so far.
     pub resets_used: u8,
+    /// True while the piece is airborne (was grounded then lifted).
+    /// Re-grounding from this state counts as a reset (SPEC §4).
+    pub airborne: bool,
 }
 
 impl LockState {
@@ -108,6 +111,7 @@ impl LockState {
         Self {
             elapsed: Duration::ZERO,
             resets_used: 0,
+            airborne: false,
         }
     }
 
