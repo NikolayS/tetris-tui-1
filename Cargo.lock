@@ -125,6 +125,7 @@ dependencies = [
  "crossterm 0.29.0",
  "directories",
  "insta",
+ "nix",
  "proptest",
  "rand",
  "rand_chacha",
