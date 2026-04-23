@@ -17,4 +17,4 @@ See SPEC.md for the full goal statement.
 
 ## Next action
 
-`samospec resume tetris-tui-1`
+`samospec iterate tetris-tui-1`
