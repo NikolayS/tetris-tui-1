@@ -1,0 +1,43 @@
+{
+  "phase": "draft",
+  "files": [
+    {
+      "path": ".samo/.gitignore",
+      "bytes": 69,
+      "tokens": 17,
+      "blob": "d9950aaaf117f8af431711029ca05e8e264a6edf",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/config.json",
+      "bytes": 1181,
+      "tokens": 296,
+      "blob": "76bd274e8954d39ab95992dbf92c4c2321f56737",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/tetris-tui-1.archived-2026-04-23T033530Z/state.json",
+      "bytes": 981,
+      "tokens": 246,
+      "blob": "8f33aba72e5446c27b4e779f8f9edfdb988674aa",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/tetris-tui-1/state.json",
+      "bytes": 1032,
+      "tokens": 258,
+      "blob": "634e95f9f3027115edceac8708e2161d8b6cb9ee",
+      "included": true,
+      "risk_flags": []
+    }
+  ],
+  "risk_flags": [],
+  "budget": {
+    "phase": "draft",
+    "tokens_used": 817,
+    "tokens_budget": 30000
+  }
+}

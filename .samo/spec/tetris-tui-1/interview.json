@@ -1,0 +1,94 @@
+{
+  "slug": "tetris-tui-1",
+  "persona": "Veteran \"TUI game developer\" expert",
+  "generated_at": "2026-04-23T03:35:30.092Z",
+  "questions": [
+    {
+      "id": "scope-and-modes",
+      "text": "What gameplay scope should v0.1 ship with?",
+      "options": [
+        "Single-player marathon only (endless with increasing speed)",
+        "Marathon + Sprint (40 lines) + Ultra (2-minute score attack)",
+        "Single-player + local hotseat versus on one terminal",
+        "Single-player + networked head-to-head versus over TCP",
+        "decide for me",
+        "not sure — defer",
+        "custom"
+      ]
+    },
+    {
+      "id": "rotation-and-rules",
+      "text": "Which Tetris rule set and rotation system should we implement?",
+      "options": [
+        "Modern guideline: SRS rotation, 7-bag randomizer, hold piece, ghost piece, lock delay",
+        "Classic NES-style: no hold, no ghost, simple rotation, gravity-only lock",
+        "Hybrid: SRS + 7-bag + ghost, but no hold and no T-spin detection",
+        "Guideline + T-spin/back-to-back/combo scoring",
+        "decide for me",
+        "not sure — defer",
+        "custom"
+      ]
+    },
+    {
+      "id": "rendering-stack",
+      "text": "What Rust TUI rendering approach should we use?",
+      "options": [
+        "ratatui + crossterm (cross-platform, widely used)",
+        "ratatui + termion (Unix-focused)",
+        "Raw crossterm with a hand-rolled double-buffered renderer",
+        "notcurses bindings for pixel/sixel-style rendering",
+        "decide for me",
+        "not sure — defer",
+        "custom"
+      ]
+    },
+    {
+      "id": "input-and-timing",
+      "text": "How should input handling and the game loop be structured?",
+      "options": [
+        "Fixed-timestep tick thread (~60Hz) + separate input thread via channels",
+        "Async tokio loop with select! over input and tick timers",
+        "Single-threaded poll loop with crossterm event timeout for frame pacing",
+        "ECS-style (bevy_ecs headless) with a fixed schedule",
+        "decide for me",
+        "not sure — defer",
+        "custom"
+      ]
+    },
+    {
+      "id": "persistence-and-config",
+      "text": "What persistence and configuration should v0.1 include?",
+      "options": [
+        "Local high-score file (JSON) in XDG config dir, no configuration",
+        "High scores + TOML config for keybindings and DAS/ARR tuning",
+        "No persistence — session-only scores, hardcoded controls",
+        "High scores + replay files (seed + input log) for playback",
+        "decide for me",
+        "not sure — defer",
+        "custom"
+      ]
+    }
+  ],
+  "answers": [
+    {
+      "id": "scope-and-modes",
+      "choice": "decide for me"
+    },
+    {
+      "id": "rotation-and-rules",
+      "choice": "decide for me"
+    },
+    {
+      "id": "rendering-stack",
+      "choice": "decide for me"
+    },
+    {
+      "id": "input-and-timing",
+      "choice": "decide for me"
+    },
+    {
+      "id": "persistence-and-config",
+      "choice": "decide for me"
+    }
+  ]
+}

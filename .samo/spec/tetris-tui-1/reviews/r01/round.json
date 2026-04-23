@@ -1,0 +1,16 @@
+{
+  "round": 1,
+  "status": "complete",
+  "seats": {
+    "reviewer_a": "ok",
+    "reviewer_b": {
+      "status": "failed",
+      "error": {
+        "reason": "unknown",
+        "message": "[\n  {\n    \"code\": \"invalid_value\",\n    \"values\": [\n      \"ambiguity\",\n      \"contradiction\",\n      \"missing-requirement\",\n      \"weak-testing\",\n      \"weak-implementation\",\n      \"missing-risk\",\n      \"unnecessary-scope\"\n    ],\n    \"path\": [\n      \"findings\",\n      8,\n      \"category\"\n    ],\n    \"message\": \"Invalid option: expected one of \\\"ambiguity\\\"|\\\"contradiction\\\"|\\\"missing-requirement\\\"|\\\"weak-testing\\\"|\\\"weak-implementation\\\"|\\\"missing-risk\\\"|\\\"unnecessary-scope\\\"\"\n  },\n  {\n    \"code\": \""
+      }
+    }
+  },
+  "started_at": "2026-04-23T08:36:45.625Z",
+  "completed_at": "2026-04-23T08:38:16.281Z"
+}
