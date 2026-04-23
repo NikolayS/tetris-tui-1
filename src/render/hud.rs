@@ -1,0 +1,136 @@
+//! HUD: score / level / lines counter + next-piece preview + overlays.
+
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use ratatui::style::{Color, Modifier, Style};
+use ratatui::text::{Line, Span, Text};
+use ratatui::widgets::{Block, Borders, Clear, Paragraph, Wrap};
+use ratatui::Frame;
+
+use crate::game::state::{GameState, Phase};
+use crate::render::helpers::{format_level, format_lines, format_score, next_preview_glyphs};
+use crate::render::theme::Theme;
+
+/// Draw the HUD panel (score, level, lines, next-piece preview) into `area`.
+///
+/// Also draws pause or game-over overlays when appropriate.
+pub fn draw(frame: &mut Frame, area: Rect, state: &GameState, theme: &Theme) {
+    // Split into sections: stats on top, next preview below.
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(7), // stats block
+            Constraint::Min(8),    // next preview
+        ])
+        .split(area);
+
+    draw_stats(frame, chunks[0], state);
+    draw_next_preview(frame, chunks[1], state, theme);
+
+    // Overlays (drawn last so they appear on top).
+    match &state.phase {
+        Phase::Paused => draw_pause_overlay(frame, area),
+        Phase::GameOver { .. } => draw_game_over_overlay(frame, area),
+        Phase::Playing => {}
+    }
+}
+
+/// Draw score / level / lines stats.
+fn draw_stats(frame: &mut Frame, area: Rect, state: &GameState) {
+    let text = Text::from(vec![
+        Line::from(vec![Span::styled(
+            "SCORE",
+            Style::default().add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(Span::raw(format_score(state.score))),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "LEVEL",
+            Style::default().add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(Span::raw(format_level(state.level))),
+        Line::from(vec![Span::styled(
+            "LINES",
+            Style::default().add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(Span::raw(format_lines(state.lines_cleared))),
+    ]);
+    let para = Paragraph::new(text).block(Block::default().borders(Borders::ALL).title("Stats"));
+    frame.render_widget(para, area);
+}
+
+/// Draw next-piece preview (up to 5 pieces).
+fn draw_next_preview(frame: &mut Frame, area: Rect, state: &GameState, theme: &Theme) {
+    let mut lines: Vec<Line> = vec![Line::from(Span::styled(
+        "NEXT",
+        Style::default().add_modifier(Modifier::BOLD),
+    ))];
+
+    for (kind, glyph) in next_preview_glyphs(&state.next_queue, theme).take(5) {
+        let color = if theme.monochrome {
+            Color::Reset
+        } else {
+            theme.color(kind)
+        };
+        let s = format!(" {} {}", glyph, glyph);
+        lines.push(Line::from(Span::styled(s, Style::default().fg(color))));
+    }
+
+    let para = Paragraph::new(Text::from(lines))
+        .block(Block::default().borders(Borders::ALL).title("Next"));
+    frame.render_widget(para, area);
+}
+
+/// Draw a centered "PAUSED" overlay.
+pub fn draw_pause_overlay(frame: &mut Frame, area: Rect) {
+    let overlay_w = 16u16.min(area.width);
+    let overlay_h = 4u16.min(area.height);
+    let x = area.x + area.width.saturating_sub(overlay_w) / 2;
+    let y = area.y + area.height.saturating_sub(overlay_h) / 2;
+    let overlay_area = Rect::new(x, y, overlay_w, overlay_h);
+
+    frame.render_widget(Clear, overlay_area);
+
+    let text = Text::from(vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            "  PAUSED  ",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD | Modifier::REVERSED),
+        )),
+        Line::from(Span::raw("  p to resume")),
+    ]);
+    let para = Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL))
+        .alignment(Alignment::Center)
+        .wrap(Wrap { trim: false });
+    frame.render_widget(para, overlay_area);
+}
+
+/// Draw a centered "GAME OVER" overlay.
+pub fn draw_game_over_overlay(frame: &mut Frame, area: Rect) {
+    let overlay_w = 20u16.min(area.width);
+    let overlay_h = 5u16.min(area.height);
+    let x = area.x + area.width.saturating_sub(overlay_w) / 2;
+    let y = area.y + area.height.saturating_sub(overlay_h) / 2;
+    let overlay_area = Rect::new(x, y, overlay_w, overlay_h);
+
+    frame.render_widget(Clear, overlay_area);
+
+    let text = Text::from(vec![
+        Line::from(""),
+        Line::from(Span::styled(
+            " GAME OVER ",
+            Style::default()
+                .fg(Color::Red)
+                .add_modifier(Modifier::BOLD | Modifier::REVERSED),
+        )),
+        Line::from(Span::raw("  r: restart")),
+        Line::from(Span::raw("  q: quit")),
+    ]);
+    let para = Paragraph::new(text)
+        .block(Block::default().borders(Borders::ALL))
+        .alignment(Alignment::Center)
+        .wrap(Wrap { trim: false });
+    frame.render_widget(para, overlay_area);
+}
