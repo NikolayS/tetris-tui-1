@@ -1,5 +1,6 @@
 pub mod clock;
 pub mod game;
+pub mod input;
 pub mod persistence;
 pub mod render;
 

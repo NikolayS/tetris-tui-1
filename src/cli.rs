@@ -55,17 +55,29 @@ pub fn parse() -> Args {
 /// Handle `--reset-scores` in cooked mode before the TUI guard is entered.
 ///
 /// Prompts on stdout/stdin (no ANSI sequences). If the user answers `y`
-/// or `yes` (case-insensitive), deletes the high-score file. Exits before
-/// `TerminalGuard::enter()` regardless of the answer.
+/// or `yes` (case-insensitive), deletes the high-score file and any
+/// `.corrupt.*` siblings. Exits before `TerminalGuard::enter()`.
 ///
 /// # Cooked-mode contract (SPEC §1a / §5)
 ///
 /// This function must not write any ANSI escape bytes (`\x1b`) to stdout.
 /// Tests assert this by scanning captured stdout bytes.
 pub fn handle_reset_scores(_args: &Args) -> anyhow::Result<()> {
-    // Write prompt to stdout — plain text only, no ANSI sequences.
+    use blocktxt::persistence;
+
     let stdout = io::stdout();
     let mut out = stdout.lock();
+
+    // Resolve the data directory — failure is not fatal here.
+    let dir = match persistence::init_data_dir() {
+        Ok(d) => d,
+        Err(_) => {
+            writeln!(out, "No data directory found; nothing to reset.")?;
+            return Ok(());
+        }
+    };
+
+    // Write prompt to stdout — plain text only, no ANSI sequences.
     write!(out, "Reset high scores? [y/N] ")?;
     out.flush()?;
 
@@ -76,12 +88,33 @@ pub fn handle_reset_scores(_args: &Args) -> anyhow::Result<()> {
 
     let answer = line.trim().to_lowercase();
     if answer == "y" || answer == "yes" {
-        // TODO(Sprint 2): actually delete the high-score file when
-        // persistence exists. For now there is no file to delete;
-        // we acknowledge the request and exit cleanly.
+        let scores_file = persistence::scores_path(&dir);
+
+        // Delete main scores file if it exists.
+        if scores_file.exists() {
+            std::fs::remove_file(&scores_file).ok();
+        }
+
+        // Delete any .corrupt.* siblings.
+        let file_name = scores_file
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("scores.json");
+        let prefix = format!("{file_name}.corrupt.");
+        if let Ok(entries) = std::fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if let Some(name) = p.file_name().and_then(|n| n.to_str()) {
+                    if name.starts_with(&prefix) {
+                        std::fs::remove_file(&p).ok();
+                    }
+                }
+            }
+        }
+
         writeln!(out, "High scores reset.")?;
     } else {
-        writeln!(out, "Aborted.")?;
+        writeln!(out, "Cancelled.")?;
     }
 
     Ok(())
