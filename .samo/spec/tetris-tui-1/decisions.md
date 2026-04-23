@@ -1,0 +1,41 @@
+# decisions
+
+- No review-loop decisions yet.
+
+## Round 1 — 2026-04-23T08:36:45.598Z
+
+- accepted weak-implementation#1: Replaced the incorrect sliding-window 7-bag invariant with the correct aligned-bag permutation property plus a max-gap-≤-12 check, and explicitly noted sliding-window uniqueness is not a 7-bag property.
+- accepted missing-risk#1: Added a full terminal lifecycle section covering SIGINT/SIGTERM, SIGTSTP/SIGCONT suspend/resume, setup-partway rollback, resize with too-small overlay, and stdout backpressure via BufWriter; lifecycle tests added to CI.
+- accepted weak-implementation#2: Persistence now specifies tempfile::NamedTempFile in the same dir, file sync_all, parent-directory sync_all on unix, 0o600 perms, symlink semantics under rename, and .bak overwrite policy.
+- accepted weak-implementation#3: Dependencies are now version-pinned, MSRV 1.75 is verified in CI, and the missing toml/tempfile/proptest/insta/signal-hook/assert_cmd crates were added to the explicit list.
+- accepted unnecessary-scope#1: Reframed the goal as 'Guideline-inspired' (not 'Guideline-compliant'), made the v0.1 cut line explicit in the goal section and README, and kept hold + T-spin deferred to v0.2 without overclaiming.
+- accepted weak-implementation#4: Defined a top-left origin with hidden rows 0..20 and visible rows 20..40, spelled out spawn position, block-out vs lock-out vs partial-lock conditions, and committed test cases for each.
+- accepted missing-risk#2: Added measurable SSH responsiveness targets (bytes/frame budgets for idle/mid-move, <20 ms p99 input-to-diff latency, 8 ms poll timeout, explicit resize/backpressure behavior) and matching CI byte-budget tests.
+- accepted weak-implementation#5: Replaced the empty architecture block with a labeled component diagram plus explicit ownership rules, error-propagation policy, and lifecycle ordering.
+- accepted missing-risk#3: Called out that --reset-scores prompts in cooked mode before TerminalGuard::enter(), and added an assert_cmd test that asserts no ANSI escape sequences appear in its captured stdout.
+- accepted unnecessary-scope#2: Reduced staffing to 2 engineers for sprints 1–2 and 4, with a third QA engineer only in sprint 3; merged the systems and TUI roles since terminal lifecycle and the ratatui/crossterm stack are tightly coupled.
+
+## Round 2 — 2026-04-23T09:05:18.891Z
+
+- accepted missing-risk#1: Added directory hardening to §4 Persistence: 0o700 mkdir, symlink refusal via symlink_metadata, world-writable bit check, ownership check, fail-closed with in-memory degradation, and warnings printed before raw mode.
+- accepted weak-implementation#1: Rewrote §3 signal lifecycle and §4 frame loop: handlers only set AtomicBools; main loop observes flags and performs all terminal I/O (restore on SIGTSTP then re-raise, re-enter on SIGCONT, full redraw on SIGWINCH, clean exit on SIGINT/SIGTERM); added explicit seam contract in architecture.
+- accepted missing-risk#2: Added new §1a Legal/trademark posture: project distributed as `blocktxt`, trademark footer in README, independently-derived SRS tables (not vendored), release-time naming-check script, and language in §1/§2 scrubbed of the word 'Tetris' as a product name.
+- accepted weak-implementation#2: Replaced the architecture placeholder with a full ASCII component diagram and a 'Contracts at the seams' subsection spelling out the GameState/Renderer seam and the app.rs/signals.rs seam.
+- accepted weak-implementation#3: Added §4 'Input handling (DAS/ARR, terminal-reality-aware)': held-direction timing with 160 ms release-inference timeout, DAS/ARR synthesized from held_direction age, kitty keyboard protocol probe with silent heuristic fallback, SoftDropOn/Off edge events instead of a 30 ms repeat.
+- accepted missing-risk#3: §4 Persistence now specifies: ProjectDirs=None → persistence disabled with stderr warning before raw mode; directory creation/validation failures → fail-closed in-memory; all pre-TTY so the game still launches and plays.
+- accepted unnecessary-scope#1: TOML config file cut from v0.1 and deferred to v0.2; §4 'Configuration' and the v0.1 cut line, dependencies list, and tests plan are updated accordingly; `toml` crate removed from the dependency list.
+- accepted weak-implementation#4: SSH byte budget demoted from a hard CI gate to a soft benchmark warning (2× regression triggers manual review) and a `rexpect`-based PTY integration test is added as the behavioral gate for end-to-end responsiveness.
+- accepted missing-risk#4: Corrupt-file recovery now writes to `high_scores.json.corrupt.{unix_timestamp}` and never overwrites existing corrupt copies; a housekeeping pass caps `.corrupt.*` at 5 (oldest deleted); tested.
+- accepted weak-implementation#5: Dependency language rewritten: removed the 'pinned' claim, stated reproducibility comes from committed Cargo.lock, added advisory response cadence (daily scheduled `cargo deny` run, 7-day SLA for security advisories) and dropped pinned-version requirements.
+- accepted missing-requirement#1: Architecture diagram now contains an actual component/data-flow ASCII diagram plus a 'Contracts at the seams' subsection; the v0.2 changelog claim is now true for v0.3.
+- accepted ambiguity#1: §4 'Soft drop (authoritative model)' resolves the conflict: one rule — effective gravity is max(natural/20, 30ms/cell) — so 30 ms acts as a high-level cap, not a parallel repeat rate; old 30 ms 'soft-drop repeat' removed.
+- accepted ambiguity#2: §4 'Lock delay' fully specifies: 500 ms timer starts on first ground, each successful grounded move/rotation resets up to cap of 15, airborne pauses timer but preserves reset counter, cap forces lock on next ground-touch, timer-expire-airborne is a no-op, hard drop bypasses lock delay; matching tests added in §5.
+- accepted ambiguity#3: O-piece spawn clarified to cells at cols 4 and 5 (2-wide occupancy); JLSTZ and I spawn with their 4-wide bounding box at cols 3..7 (exclusive upper); spawn-position test cases added.
+- accepted ambiguity#4: §4 'Back-to-Back multiplier (authoritative)' specifies: first Tetris scores 800×level and sets b2b_active=true; subsequent consecutive Tetris scores 800×level×1.5; non-Tetris line clear breaks the chain; empty locks (0 lines cleared) do NOT break the chain; §5 scoring test now parameterizes on b2b_active going in and on empty-lock transitions.
+- accepted weak-testing#1: Added §5 test 8 for render helper unit tests (ghost_y, HUD formatting) and introduced `render/helpers.rs` as a module specifically for pure, unit-testable render helpers; full-frame rendering remains snapshot-tested.
+- accepted weak-testing#2: §5 test 13 rewritten to use `rexpect` PTY harness: panic-safety, SIGINT, SIGTSTP/SIGCONT, and restore-escape verification all run against a real PTY allocated by the harness, so termios is read from the same PTY the child manipulated (fixes v0.2's broken stty-on-parent-tty assumption).
+- accepted weak-testing#3: Added §5 test 12 'DAS/ARR parameterized test' covering two timing profiles over 500 ms of fake-clock time, asserting exact emitted event sequence + timestamps, plus the held-direction timeout case.
+- accepted ambiguity#5: Config file error handling question is mooted in v0.3 because TOML config is cut from v0.1; `--config` flag is removed, eliminating the inconsistency between pre-TTY path validation and silent default fallback.
+- accepted ambiguity#6: This is a duplicate of Review 1's async-signal-safety finding and is addressed by the same §3 rewrite: handlers set atomic flags only; the main loop handles SIGTSTP restore + re-raise and SIGCONT re-entry, so no non-async-signal-safe work occurs inside any handler.
+- accepted ambiguity#7: §5 test 10 now asserts pre-existing `.corrupt.*` files are preserved (not overwritten) and that the 5-file cap correctly deletes the oldest; this also covers the between-sessions data-loss concern raised by Review 1's same-category finding.
+- accepted ambiguity#8: §4 'Frame cadence vs. event poll (authoritative)' pins down the loop: draws are event-driven with a 16 ms ceiling, poll timeout dynamically clamps to the draw deadline or 8 ms (whichever is smaller); worst-case input-to-visible-change latency bounded at < 11 ms, under the 20 ms p99 target with headroom.
