@@ -3,12 +3,29 @@
 /// These tests spawn `blocktxt` under a PTY allocated by rexpect, send
 /// signals, and verify that the terminal is left in the correct mode.
 ///
+/// ## macOS PTY termios limitation (issue #45)
+///
+/// `termios_raw_after_enter` and `termios_restored_after_sigint` are gated
+/// to Linux only.  The `is_raw()` helper calls `tcgetattr` on the rexpect
+/// `PtyMaster` fd.  On Linux, the PTY master and slave share the same
+/// termios struct, so `tcgetattr(master_fd)` reflects the raw-mode state
+/// that crossterm sets via `tcsetattr(slave_fd)` inside the child process.
+/// On macOS, master and slave maintain *independent* termios copies; reading
+/// the master fd always returns the master-side initial state (cooked), so
+/// the assertion `is_raw(&proc)` is structurally false on macOS regardless
+/// of what the child does.  There is no portable way to read the slave's
+/// termios from the parent process on macOS without opening the slave device
+/// by name (ioctl TIOCPTYGNAME / ptsname), which rexpect does not expose.
+/// The tests run on ubuntu-latest CI and catch real regressions there.
+///
+/// Tracked: #45 — macOS PTY rexpect limitation
+///
 /// The `sigtstp_restores_cooked_then_sigcont_restores_raw` test is gated
 /// to Linux only because macOS PTY semantics for SIGTSTP/SIGCONT when the
 /// controlling terminal is the master side behave differently: the slave
 /// tty does not necessarily reflect the stopped state in a way that can be
 /// reliably queried from the master side within the process-group boundary
-/// that rexpect sets up.  The other three tests run on both platforms.
+/// that rexpect sets up.
 #[cfg(unix)]
 mod tests {
     use rexpect::process::PtyProcess;
@@ -52,6 +69,9 @@ mod tests {
     }
 
     /// After the binary starts and enters the TUI, the PTY should be in raw mode.
+    ///
+    /// Linux only — see module doc comment (issue #45, macOS PTY termios).
+    #[cfg(target_os = "linux")]
     #[test]
     fn termios_raw_after_enter() {
         let proc = spawn_blocktxt(&[]);
@@ -62,6 +82,9 @@ mod tests {
 
     /// After sending SIGINT the binary should exit and the PTY should be
     /// back in cooked (non-raw) mode.
+    ///
+    /// Linux only — see module doc comment (issue #45, macOS PTY termios).
+    #[cfg(target_os = "linux")]
     #[test]
     fn termios_restored_after_sigint() {
         use nix::sys::signal::{kill, Signal};
