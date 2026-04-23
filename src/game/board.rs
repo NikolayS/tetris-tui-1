@@ -34,6 +34,16 @@ impl Board {
         self.cells[row][col] = Some(piece);
     }
 
+    /// Return the piece kind at (col, row), or `None` if empty.
+    ///
+    /// Returns `None` for out-of-bounds coordinates.
+    pub fn cell_kind(&self, col: usize, row: usize) -> Option<PieceKind> {
+        if col >= 10 || row >= 40 {
+            return None;
+        }
+        self.cells[row][col]
+    }
+
     /// Clear all fully-occupied rows, shift everything above down,
     /// and return the number of rows cleared.
     ///
