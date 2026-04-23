@@ -22,6 +22,50 @@ use crate::game::rules::{
 };
 use crate::game::srs::{rotate, RotationDir};
 
+// ── Line-clear animation constants ───────────────────────────────────────────
+
+/// Duration of the flash phase (phase 1): 0–100 ms.
+pub const ANIM_FLASH_MS: u64 = 100;
+/// Duration of the dim phase (phase 2): 100–200 ms.
+pub const ANIM_DIM_MS: u64 = 100;
+/// Total animation budget: ≤ 200 ms.
+pub const ANIM_TOTAL_MS: u64 = ANIM_FLASH_MS + ANIM_DIM_MS;
+
+// ── Line-clear animation state ────────────────────────────────────────────────
+
+/// Three-phase line-clear animation driven by elapsed wall time.
+///
+/// Phase 1 (0–100 ms): cleared rows shown flashed (inverse/bright fill).
+/// Phase 2 (100–200 ms): rows shown dimmer (transition).
+/// Phase 3 (≥ 200 ms): rows removed, cells above shift down (handled by
+///   transitioning `pending_clear` → actual `Board::clear_full_rows`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LineClearPhase {
+    /// Flash phase: `elapsed` < 100 ms.
+    Flash,
+    /// Dim/transition phase: 100 ms ≤ `elapsed` < 200 ms.
+    Dim,
+}
+
+/// Animation state held in `GameState` while a line-clear plays out.
+#[derive(Debug, Clone)]
+pub struct LineClearAnim {
+    /// Board row indices (0-based, absolute) being animated.
+    pub rows: Vec<usize>,
+    /// When the animation began (from the injected clock).
+    pub started_at: Instant,
+    /// Current visual phase.
+    pub phase: LineClearPhase,
+    /// Board snapshot before clearing (contains the full rows for rendering).
+    pub board_snapshot: Board,
+    /// Deferred line count (filled in `finish_anim`).
+    pub pending_count: u8,
+    /// Level before this clear (for scoring).
+    pub pending_level_before: u8,
+    /// B2B state before this clear (for scoring).
+    pub pending_b2b_active: bool,
+}
+
 // Number of next-pieces kept in the preview queue.
 const NEXT_QUEUE_LEN: usize = 5;
 
@@ -96,8 +140,13 @@ pub struct GameState {
     soft_drop_held: bool,
     gravity_acc: Duration,
 
+    /// Active line-clear animation, if any.
+    ///
+    /// While `Some`, `board` still contains the full rows (for rendering).
+    /// They are removed when the animation completes (phase 3 transition).
+    pub line_clear_anim: Option<LineClearAnim>,
+
     // Injected clock — stored so tests can share the FakeClock handle.
-    #[allow(dead_code)]
     clock: Box<dyn Clock>,
 
     // Wall-clock reference point (last step).
@@ -137,6 +186,7 @@ impl GameState {
             lock_state: None,
             soft_drop_held: false,
             gravity_acc: Duration::ZERO,
+            line_clear_anim: None,
             clock,
             last_tick: now,
         }
@@ -171,6 +221,20 @@ impl GameState {
                 return events;
             }
             Phase::Playing => {}
+        }
+
+        // ── Tick line-clear animation ────────────────────────────────────────
+        // Animation runs concurrently with input handling (non-blocking).
+        // When the animation completes we finalize the board clear and spawn
+        // the next piece.
+        if self.line_clear_anim.is_some() {
+            self.tick_anim(&mut events);
+            // While animating, skip gravity/lock so the board stays stable.
+            if self.line_clear_anim.is_some() {
+                return events;
+            }
+            // Animation just finished — next piece already spawned; done.
+            return events;
         }
 
         // ── Handle inputs ────────────────────────────────────────────────────
@@ -408,16 +472,80 @@ impl GameState {
 
         events.push(Event::PieceLocked);
 
-        // Clear full rows and score.
-        let level_before = self.level;
+        // Detect full rows before clearing them.
+        let full_rows: Vec<usize> = (0..40)
+            .filter(|&r| (0..10usize).all(|c| self.board.cell_kind(c, r).is_some()))
+            .collect();
+
+        // Reset lock state and gravity accumulator.
+        self.lock_state = None;
+        self.gravity_acc = Duration::ZERO;
+
+        if full_rows.is_empty() {
+            // No lines cleared — spawn immediately.
+            self.spawn_next(events);
+            return;
+        }
+
+        // Start the line-clear animation. Board is NOT mutated yet; the full
+        // rows remain for the flash + dim frames. Scoring and spawn are
+        // deferred to `finish_anim`.
+        let now = self.clock.now();
+        self.line_clear_anim = Some(LineClearAnim {
+            rows: full_rows,
+            started_at: now,
+            phase: LineClearPhase::Flash,
+            board_snapshot: self.board.clone(),
+            pending_count: 0, // computed in finish_anim
+            pending_level_before: self.level,
+            pending_b2b_active: self.b2b_active,
+        });
+    }
+
+    // ── Animation ────────────────────────────────────────────────────────────
+
+    /// Advance the line-clear animation by checking elapsed time against the
+    /// clock. Transitions Flash → Dim → finished. On finish, calls
+    /// `finish_anim` to apply board mutation and spawn the next piece.
+    fn tick_anim(&mut self, events: &mut Vec<Event>) {
+        let now = self.clock.now();
+        let elapsed = {
+            let anim = self.line_clear_anim.as_mut().unwrap();
+            now.saturating_duration_since(anim.started_at)
+        };
+
+        let flash_dur = Duration::from_millis(ANIM_FLASH_MS);
+        let total_dur = Duration::from_millis(ANIM_TOTAL_MS);
+
+        if elapsed >= total_dur {
+            // Phase 3: animation complete — finalize.
+            let anim = self.line_clear_anim.take().unwrap();
+            self.finish_anim(anim, events);
+        } else if elapsed >= flash_dur {
+            // Phase 2: dim.
+            if let Some(anim) = &mut self.line_clear_anim {
+                anim.phase = LineClearPhase::Dim;
+            }
+        }
+        // Phase 1 (Flash) is the initial state — nothing to change.
+    }
+
+    /// Finalize the animation: apply scoring, clear the board rows, and spawn
+    /// the next piece.
+    fn finish_anim(&mut self, anim: LineClearAnim, events: &mut Vec<Event>) {
+        // Restore the board snapshot (which still has the full rows) then
+        // clear them properly via the authoritative method.
+        self.board = anim.board_snapshot;
         let cleared = self.board.clear_full_rows();
+
+        let level_before = anim.pending_level_before;
         self.lines_cleared += u32::from(cleared);
         let new_level = level_after_lines(self.lines_cleared);
         self.level = new_level;
 
-        let (delta, new_b2b) = score_line_clear(cleared, level_before, self.b2b_active);
+        let (delta, new_b2b) = score_line_clear(cleared, level_before, anim.pending_b2b_active);
         self.score += delta;
-        let b2b_was = self.b2b_active;
+        let b2b_was = anim.pending_b2b_active;
         self.b2b_active = new_b2b;
 
         if cleared > 0 {
@@ -430,11 +558,6 @@ impl GameState {
             });
         }
 
-        // Reset lock state and gravity accumulator.
-        self.lock_state = None;
-        self.gravity_acc = Duration::ZERO;
-
-        // Spawn next piece.
         self.spawn_next(events);
     }
 
@@ -487,5 +610,6 @@ impl GameState {
         self.lock_state = None;
         self.soft_drop_held = false;
         self.gravity_acc = Duration::ZERO;
+        self.line_clear_anim = None;
     }
 }
