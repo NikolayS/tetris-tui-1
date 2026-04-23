@@ -52,6 +52,13 @@ fn main() -> anyhow::Result<()> {
     let flags = signals::unix::install()?;
 
     // Step 6: Probe kitty protocol (quick 50 ms probe before entering raw mode).
+    //
+    // Risk note (P-4): if the process panics between writing the probe query
+    // bytes (`CSI > 1u`) and a terminal that does not understand them, some
+    // stray characters could in principle remain in the terminal.  In
+    // practice the panic hook installed above calls `restore_raw()` which
+    // writes a known ANSI reset sequence to fd 2, so the terminal ends up
+    // cleanly restored regardless of probe response state.
     let kitty = InputTranslator::probe_kitty(Duration::from_millis(50));
 
     // Step 7: Enter TUI (raw mode + alternate screen + hide cursor).
@@ -180,7 +187,13 @@ fn run_loop(
                     lines: state.lines_cleared,
                     ts,
                 };
-                store.insert(hs);
+                let new_best = store.insert(hs);
+                if new_best {
+                    eprintln!(
+                        "blocktxt: new personal best: {} points at level {}.",
+                        state.score, state.level
+                    );
+                }
                 if let Some(dir) = persist_dir {
                     if let Err(e) = persistence::save(store, dir) {
                         eprintln!("blocktxt: warning: could not save score: {e}");
@@ -200,7 +213,10 @@ fn run_loop(
         }
 
         // --- 4. Draw ---
-        terminal.draw(|f| render::render(f, &state, &theme))?;
+        // Pass the high-score store to the renderer so the GameOver overlay
+        // can light up the NEW BEST banner from PR #39.
+        let store_ref: &HighScoreStore = store;
+        terminal.draw(|f| render::render_with_scores(f, &state, &theme, Some(store_ref)))?;
 
         // --- 5. Sleep remainder of frame budget ---
         let elapsed = last_frame.elapsed();

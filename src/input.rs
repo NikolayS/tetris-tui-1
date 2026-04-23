@@ -230,36 +230,32 @@ impl InputTranslator {
 
     fn handle_release(&mut self, code: KeyCode, _now: Instant, inputs: &mut Vec<Input>) {
         match code {
-            KeyCode::Left | KeyCode::Char('a') | KeyCode::Char('h') => {
-                if matches!(self.held.as_ref().map(|h| h.kind), Some(HeldDir::Left)) {
-                    self.held = None;
-                    self.last_dir_event = None;
-                }
+            KeyCode::Left | KeyCode::Char('a') | KeyCode::Char('h')
+                if matches!(self.held.as_ref().map(|h| h.kind), Some(HeldDir::Left)) =>
+            {
+                self.held = None;
+                self.last_dir_event = None;
             }
-            KeyCode::Right | KeyCode::Char('d') | KeyCode::Char('l') => {
-                if matches!(self.held.as_ref().map(|h| h.kind), Some(HeldDir::Right)) {
-                    self.held = None;
-                    self.last_dir_event = None;
-                }
+            KeyCode::Right | KeyCode::Char('d') | KeyCode::Char('l')
+                if matches!(self.held.as_ref().map(|h| h.kind), Some(HeldDir::Right)) =>
+            {
+                self.held = None;
+                self.last_dir_event = None;
             }
-            KeyCode::Down | KeyCode::Char('s') | KeyCode::Char('j') => {
-                if self.soft_drop_held {
-                    self.soft_drop_held = false;
-                    self.last_soft_drop = None;
-                    inputs.push(Input::SoftDropOff);
-                }
+            KeyCode::Down | KeyCode::Char('s') | KeyCode::Char('j') if self.soft_drop_held => {
+                self.soft_drop_held = false;
+                self.last_soft_drop = None;
+                inputs.push(Input::SoftDropOff);
             }
             _ => {}
         }
     }
 
     fn press_dir(&mut self, dir: HeldDir, now: Instant, inputs: &mut Vec<Input>) {
-        if let Some(h) = &self.held {
-            if h.kind == dir {
-                // Same direction — update timestamp (release-inference reset).
-                self.last_dir_event = Some(now);
-                return;
-            }
+        if matches!(&self.held, Some(h) if h.kind == dir) {
+            // Same direction — update timestamp (release-inference reset).
+            self.last_dir_event = Some(now);
+            return;
         }
         // New direction or direction change — emit one immediate move.
         let input = match dir {
@@ -280,13 +276,11 @@ impl InputTranslator {
         // Release-inference for soft-drop.
         // Use strictly-greater so that the threshold boundary itself
         // does not accidentally fire before DAS can emit a repeat.
-        if self.soft_drop_held {
-            if let Some(last) = self.last_soft_drop {
-                if now.duration_since(last) > self.release_infer {
-                    self.soft_drop_held = false;
-                    self.last_soft_drop = None;
-                    inputs.push(Input::SoftDropOff);
-                }
+        if let Some(last) = self.last_soft_drop {
+            if self.soft_drop_held && now.duration_since(last) > self.release_infer {
+                self.soft_drop_held = false;
+                self.last_soft_drop = None;
+                inputs.push(Input::SoftDropOff);
             }
         }
 

@@ -20,16 +20,17 @@ use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 use ratatui::Frame;
 
 use crate::game::state::GameState;
+use crate::persistence::HighScoreStore;
 pub use theme::Theme;
 
 /// Minimum terminal width required to display the game.
 ///
-/// 22 (board + border) + 16 (HUD min) = 38, rounded to 40 for padding.
-pub const MIN_WIDTH: u16 = 40;
+/// Per SPEC §3 "SIGWINCH / resize": minimum is 44×24 characters.
+pub const MIN_WIDTH: u16 = 44;
 
 /// Minimum terminal height required to display the game.
 ///
-/// 20 visible rows + 2 border rows + 2 HUD header/footer = 24.
+/// Per SPEC §3 "SIGWINCH / resize": minimum is 44×24 characters.
 pub const MIN_HEIGHT: u16 = 24;
 
 /// Draw one full frame: board + HUD.
@@ -37,6 +38,19 @@ pub const MIN_HEIGHT: u16 = 24;
 /// If the terminal is smaller than `MIN_WIDTH × MIN_HEIGHT`, draws the
 /// too-small overlay instead of the game.
 pub fn render(frame: &mut Frame, state: &GameState, theme: &Theme) {
+    render_with_scores(frame, state, theme, None);
+}
+
+/// Like `render`, but routes an optional `HighScoreStore` to the HUD so
+/// the new-best banner on the GameOver overlay can light up end-to-end.
+///
+/// Preferred entry point from `main.rs` once persistence is wired.
+pub fn render_with_scores(
+    frame: &mut Frame,
+    state: &GameState,
+    theme: &Theme,
+    high_scores: Option<&HighScoreStore>,
+) {
     let area = frame.area();
 
     if area.width < MIN_WIDTH || area.height < MIN_HEIGHT {
@@ -54,7 +68,7 @@ pub fn render(frame: &mut Frame, state: &GameState, theme: &Theme) {
         .split(area);
 
     board_view::draw(frame, chunks[0], state, theme);
-    hud::draw(frame, chunks[1], state, theme);
+    hud::draw_with_scores(frame, chunks[1], state, theme, high_scores);
 }
 
 /// Draw a centered "terminal too small" overlay.
