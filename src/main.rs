@@ -1,3 +1,4 @@
+mod cli;
 mod signals;
 mod terminal;
 
@@ -8,26 +9,34 @@ use crossterm::event;
 use terminal::{install_panic_hook, TerminalGuard};
 
 fn main() -> anyhow::Result<()> {
-    // Install the panic hook BEFORE guard setup so the terminal is restored
-    // even if setup panics.
+    // Step 1: Parse CLI args (clap derive).
+    let args = cli::parse();
+
+    // Step 2: Handle --reset-scores in cooked mode before any raw mode.
+    if args.reset_scores {
+        cli::handle_reset_scores(&args)?;
+        return Ok(());
+    }
+
+    // Step 3: Install signal flags BEFORE guard enter so Ctrl-C works if
+    //         guard setup fails partway through.
+    // Step 4: Install the panic hook BEFORE guard setup so the terminal is
+    //         restored even if setup panics.
     install_panic_hook();
 
-    // Hidden flag used by PTY tests: panic immediately after guard entry to
-    // verify that the panic hook restores the terminal.  Issue #4 will
-    // replace the args() check with a proper clap subcommand.
-    let crash_for_test = std::env::args().any(|a| a == "--crash-for-test");
-
-    // Install signal flags BEFORE guard enter so Ctrl-C works if guard
-    // setup fails partway through.
     #[cfg(unix)]
     let flags = signals::unix::install()?;
 
+    // Step 5: Enter TUI (raw mode + alternate screen + hide cursor).
     let mut guard = TerminalGuard::enter()?;
 
-    if crash_for_test {
+    // Step 6: --crash-for-test panics after guard entry (used by PTY tests).
+    //         Replaces the ad-hoc std::env::args() check from PR #8.
+    if args.crash_for_test {
         panic!("--crash-for-test: intentional panic after guard entry");
     }
 
+    // Step 7: Run loop (Sprint 1 stub; real game in Sprint 2).
     run_loop(&mut guard, &flags)?;
 
     Ok(())
@@ -58,7 +67,7 @@ fn run_loop(guard: &mut TerminalGuard, flags: &signals::unix::Flags) -> anyhow::
         if flags.tstp_pending.swap(false, Ordering::Relaxed) {
             // Restore terminal before stopping so the shell gets a sane tty.
             guard.restore();
-            // Raise SIGSTOP to actually pause the process.  The kernel will
+            // Raise SIGSTOP to actually pause the process. The kernel will
             // deliver SIGCONT later when the user does `fg`.
             let _ = signal::raise(Signal::SIGSTOP);
             // When we wake from SIGSTOP (SIGCONT delivered), re-enter TUI.
