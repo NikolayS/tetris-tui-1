@@ -24,31 +24,24 @@ fn version_flag_prints_crate_version() {
         .stdout(is_match(r"blocktxt \d+\.\d+\.\d+\n").unwrap());
 }
 
-/// `blocktxt --help` must not use the word "Tetris" as a product name.
+/// `blocktxt --help` must not contain the prohibited trademark term.
 ///
-/// The trademark footer pattern ("trademark of") is the only allowed
-/// exception; since --help content is composed entirely by clap from the
-/// `about` string, and we control that string, there should be zero
-/// occurrences of bare "Tetris" in the help output.
+/// The help text is composed entirely by clap from the `about`/`long_about`
+/// strings; since we control those strings there should be zero occurrences
+/// of the prohibited term in the help output.
 #[test]
-fn help_does_not_mention_tetris_as_product() {
+fn help_does_not_mention_prohibited_term() {
     let output = cmd().arg("--help").output().expect("failed to run --help");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
-    // For each line, check if it contains bare "Tetris" without ® suffix,
-    // and isn't a trademark-of disclaimer line.
-    let bare_tetris_re = Regex::new(r"(?:^|[^®a-zA-Z])Tetris([^®]|$)").unwrap();
+    // Case-insensitive check: no occurrence of the prohibited term allowed.
+    let prohibited_re = Regex::new(r"(?i)tetris").unwrap();
 
     for line in stdout.lines() {
-        let lower = line.to_lowercase();
-        if lower.contains("trademark of") || lower.contains("registered trademark") {
-            // Trademark disclaimer lines are allowed to mention Tetris®.
-            continue;
-        }
         assert!(
-            !bare_tetris_re.is_match(line),
-            "help output contains bare 'Tetris' product name on line: {line:?}"
+            !prohibited_re.is_match(line),
+            "help output contains prohibited trademark term on line: {line:?}"
         );
     }
 
@@ -79,30 +72,30 @@ fn reset_scores_aborts_cleanly_on_no() {
     );
 }
 
-/// `check-naming.sh` catches both `Tetris` and all-caps `TETRIS` (#10).
+/// `check-naming.sh` catches all case variants of the prohibited term (#10).
 ///
 /// A temporary file containing "TETRIS GAME" must be flagged (exit 1).
-/// The README/Cargo.toml scan (no prohibited strings) must pass (exit 0).
+/// The fixture string "TETRIS GAME" lives only inside this test body and
+/// inside the generated temp file; scripts/check-naming.sh excludes tests/
+/// from its scan so the presence of this string here does not self-trigger.
 #[test]
-fn check_naming_catches_all_caps_tetris() {
+fn check_naming_catches_prohibited_term_uppercase() {
     use std::io::Write;
     use std::process::Command as StdCommand;
 
-    // Write a temp file containing all-caps TETRIS.
+    // Write a temp file containing the all-caps prohibited term as fixture.
     let mut tmp = tempfile::NamedTempFile::new().expect("tempfile");
     writeln!(tmp, "TETRIS GAME is not allowed here").expect("write");
     tmp.flush().expect("flush");
 
-    // Patch the script's `targets` inline: feed the temp file as the only
-    // target by running a sub-script that overrides the targets array.
+    // Run a minimal inline detector against the temp file only.
     let script = format!(
         r#"#!/usr/bin/env bash
 set -Eeuo pipefail
 IFS=$'\n\t'
 f={}
 fail=0
-if grep -nE '(^|[^®a-zA-Z])(Tetris|TETRIS)([^®]|$)' "${{f}}" \
-    | grep -vi 'trademark of'; then
+if grep -rn -iE 'tetris' "${{f}}" 2>/dev/null; then
   fail=1
 fi
 exit "${{fail}}"
@@ -121,7 +114,7 @@ exit "${{fail}}"
 
     assert!(
         !status.success(),
-        "check-naming should exit 1 for all-caps TETRIS"
+        "check-naming should exit 1 for all-caps prohibited term"
     );
 }
 

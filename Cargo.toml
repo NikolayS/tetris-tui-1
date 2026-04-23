@@ -5,7 +5,7 @@ edition = "2021"
 rust-version = "1.75"
 description = "Terminal falling-block puzzle game (Guideline-inspired)"
 license = "Apache-2.0"
-repository = "https://github.com/NikolayS/tetris-tui-1"
+repository = "https://github.com/NikolayS/blocktxt-1"
 
 [dependencies]
 anyhow = "1.0.102"

@@ -20,8 +20,8 @@ The spec has a solid core direction, but several correctness and ops claims are 
 
 ## unnecessary-scope
 
-- (major) The goal promises 'modern Guideline-compliant mechanics' and transferable mainstream Tetris muscle memory, but v0.1 explicitly excludes hold and T-spin detection while still including back-to-back Tetris and SRS. That is a scope/claim mismatch: either downgrade the claim to 'Guideline-inspired' or include the missing mechanics needed for the advertised standard.
-- (minor) Four veteran engineers for a single-player terminal Tetris v0.1 is excessive relative to the stated scope and may increase coordination cost more than delivery speed. The plan should justify this staffing or reduce the team/sprint model.
+- (major) The goal promises 'modern Guideline-compliant mechanics' and transferable mainstream muscle memory, but v0.1 explicitly excludes hold and T-spin detection while still including back-to-back 4-line clear and SRS. That is a scope/claim mismatch: either downgrade the claim to 'Guideline-inspired' or include the missing mechanics needed for the advertised standard.
+- (minor) Four veteran engineers for a single-player terminal v0.1 is excessive relative to the stated scope and may increase coordination cost more than delivery speed. The plan should justify this staffing or reduce the team/sprint model.
 
 ## suggested-next-version
 
@@ -52,7 +52,7 @@ v0.2 should tighten coordinate/top-out definitions, correct the 7-bag invariant,
     },
     {
       "category": "unnecessary-scope",
-      "text": "The goal promises 'modern Guideline-compliant mechanics' and transferable mainstream Tetris muscle memory, but v0.1 explicitly excludes hold and T-spin detection while still including back-to-back Tetris and SRS. That is a scope/claim mismatch: either downgrade the claim to 'Guideline-inspired' or include the missing mechanics needed for the advertised standard.",
+      "text": "The goal promises 'modern Guideline-compliant mechanics' and transferable mainstream muscle memory, but v0.1 explicitly excludes hold and T-spin detection while still including back-to-back 4-line clear and SRS. That is a scope/claim mismatch: either downgrade the claim to 'Guideline-inspired' or include the missing mechanics needed for the advertised standard.",
       "severity": "major"
     },
     {
@@ -77,7 +77,7 @@ v0.2 should tighten coordinate/top-out definitions, correct the 7-bag invariant,
     },
     {
       "category": "unnecessary-scope",
-      "text": "Four veteran engineers for a single-player terminal Tetris v0.1 is excessive relative to the stated scope and may increase coordination cost more than delivery speed. The plan should justify this staffing or reduce the team/sprint model.",
+      "text": "Four veteran engineers for a single-player terminal v0.1 is excessive relative to the stated scope and may increase coordination cost more than delivery speed. The plan should justify this staffing or reduce the team/sprint model.",
       "severity": "minor"
     }
   ],

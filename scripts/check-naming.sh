@@ -1,19 +1,27 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 IFS=$'\n\t'
-# Prohibited product-name strings in README + Cargo.toml + built artifacts.
-fail=0
-targets=(README.md Cargo.toml)
+
+# Reject ANY occurrence of the prohibited trademark term in committed
+# text files, regardless of case. There is no legitimate use of the
+# word in this repository.
+#
+# The pattern is stored in a variable so the literal term does not appear
+# as a plain string in this file (which is itself scanned by this script).
+#
+# Note: tests/ is intentionally excluded — it contains the term as
+# fixture input to validate the detector itself (see tests/cli.rs).
+prohibited="tet""ris"
+
+targets=(README.md Cargo.toml src scripts .github)
 [[ -f target/release/blocktxt ]] && targets+=(target/release/blocktxt)
-for f in "${targets[@]}"; do
-  [[ -f "${f}" ]] || continue
-  # "Tetris®" in the trademark footer is allowed; bare "Tetris" as a
-  # product name is not. The inner grep filters out lines that contain
-  # "trademark of" (the standard footer phrasing).
-  if grep -nE '(^|[^®a-zA-Z])(Tetris|TETRIS)([^®]|$)' "${f}" \
-    | grep -vi 'trademark of'; then
-    echo "::error::prohibited 'Tetris' usage in ${f}" >&2
+
+fail=0
+for t in "${targets[@]}"; do
+  [[ -e "$t" ]] || continue
+  if grep -rn -iE "${prohibited}" "$t" 2>/dev/null; then
+    echo "::error::prohibited trademark term found in $t" >&2
     fail=1
   fi
 done
-exit "${fail}"
+exit "$fail"
