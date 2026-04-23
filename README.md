@@ -26,6 +26,12 @@ Requires Rust stable (MSRV 1.75).
 cargo install --locked --git https://github.com/NikolayS/blocktxt-1
 ```
 
+## Development
+
+This repo ships a `Justfile`. Install [just](https://github.com/casey/just)
+(`brew install just`) and run `just --list` to see common tasks.
+Shortcuts: `just run`, `just ci`, `just release`.
+
 ## Play
 
 Run `blocktxt`. Keybinds:
