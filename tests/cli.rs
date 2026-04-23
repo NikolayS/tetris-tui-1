@@ -146,3 +146,26 @@ fn reset_scores_exits_cleanly_on_yes() {
         "exit code should be 0 when user answers 'y'"
     );
 }
+
+/// Release binary size guard — only runs when `BLOCKTXT_RELEASE_BIN` is set.
+///
+/// In CI the release workflow sets the env var to the built binary path so
+/// this assertion runs as part of `cargo test`. Locally, skip by default
+/// (release builds are slow; the workflow is the authoritative size check).
+///
+/// Limit: 8 MiB (8 388 608 bytes). With LTO=thin + strip=symbols the real
+/// binary should be in the 3-5 MiB range on Linux x86_64.
+#[test]
+fn release_binary_fits_within_8_mib() {
+    let Ok(bin_path) = std::env::var("BLOCKTXT_RELEASE_BIN") else {
+        return; // skip when not running in release-workflow context
+    };
+
+    const MAX_BYTES: u64 = 8 * 1024 * 1024; // 8 MiB
+    let metadata = std::fs::metadata(&bin_path).expect("BLOCKTXT_RELEASE_BIN path not found");
+    let size = metadata.len();
+    assert!(
+        size <= MAX_BYTES,
+        "release binary {bin_path} is {size} bytes, exceeds 8 MiB limit"
+    );
+}

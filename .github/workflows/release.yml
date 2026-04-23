@@ -1,0 +1,103 @@
+name: release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.1.0)"
+        required: true
+        default: "v0.1.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: build (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: macos-13
+            target: x86_64-apple-darwin
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout at tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Naming check
+        shell: bash
+        run: |
+          bash scripts/check-naming.sh \
+            target/${{ matrix.target }}/release/blocktxt
+
+      - name: Binary size guard (<= 8 MiB)
+        shell: bash
+        run: |
+          bin="target/${{ matrix.target }}/release/blocktxt"
+          max_bytes=8388608
+          actual=$(wc -c < "${bin}" | tr -d ' ')
+          echo "Binary size: ${actual} bytes (limit: ${max_bytes})"
+          if (( actual > max_bytes )); then
+            echo "::error::Binary ${bin} is ${actual} bytes," \
+              "exceeds 8 MiB limit (${max_bytes} bytes)" >&2
+            exit 1
+          fi
+
+      - name: Package tarball
+        id: tarball
+        shell: bash
+        run: |
+          version=$(cargo metadata --no-deps --format-version 1 \
+            | python3 -c \
+              "import sys,json; \
+               pkgs=json.load(sys.stdin)['packages']; \
+               print(next(p['version'] for p in pkgs \
+                 if p['name']=='blocktxt'))")
+          name="blocktxt-${version}-${{ matrix.target }}"
+          archive="${name}.tar.gz"
+          mkdir -p "dist/${name}"
+          cp "target/${{ matrix.target }}/release/blocktxt" \
+             "dist/${name}/"
+          cp README.md LICENSE "dist/${name}/" 2>/dev/null || true
+          tar -czf "${archive}" -C dist "${name}"
+          echo "archive=${archive}" >> "$GITHUB_OUTPUT"
+          echo "Packaged: ${archive}"
+
+      - name: Upload to GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.tag.outputs.tag }}"
+          archive="${{ steps.tarball.outputs.archive }}"
+          # wait briefly if release was just created (workflow_dispatch case)
+          gh release upload "${tag}" "${archive}" --clobber

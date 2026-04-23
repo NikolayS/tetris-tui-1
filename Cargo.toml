@@ -3,9 +3,12 @@ name = "blocktxt"
 version = "0.0.0"
 edition = "2021"
 rust-version = "1.75"
-description = "Terminal falling-block puzzle game (Guideline-inspired)"
+description = "A terminal falling-block puzzle game."
 license = "Apache-2.0"
 repository = "https://github.com/NikolayS/blocktxt-1"
+readme = "README.md"
+keywords = ["game", "puzzle", "tui", "terminal"]
+categories = ["games", "command-line-utilities"]
 
 [dependencies]
 anyhow = "1.0.102"
@@ -31,3 +34,10 @@ proptest = "1.8.0"
 regex = "1"
 rexpect = "0.6.3"
 serial_test = "3"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
+opt-level = 3
