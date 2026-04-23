@@ -158,11 +158,11 @@ fn unique_corrupt_path_no_collision() {
     let tmp = tempfile::tempdir().unwrap();
     let base = tmp.path().join("scores.json");
 
-    let p1 = unique_corrupt_path(&base);
+    let p1 = unique_corrupt_path(&base).unwrap();
     // Create p1 so p2 must pick a different name.
     fs::write(&p1, b"x").unwrap();
 
-    let p2 = unique_corrupt_path(&base);
+    let p2 = unique_corrupt_path(&base).unwrap();
     assert_ne!(p1, p2, "unique_corrupt_path must avoid collisions");
 }
 
