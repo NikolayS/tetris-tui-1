@@ -1,26 +1,20 @@
-# tetris-tui-1 — SPEC v0.3
+# blocktxt-1 — SPEC v0.3
 
 ## 1. Goal & why it's needed
 
-**Goal.** Ship a polished, single-player terminal falling-block puzzle game with Guideline-inspired mechanics (SRS rotation + kicks, 7-bag, ghost, next-preview, Guideline-style scoring for singles/doubles/triples/tetrises), playable on macOS and Linux terminals (and Windows via WSL), with persistent high scores.
+**Goal.** Ship a polished, single-player terminal falling-block puzzle game with Guideline-inspired mechanics (SRS rotation + kicks, 7-bag, ghost, next-preview, Guideline-style scoring for singles/doubles/triples/4-line clears), playable on macOS and Linux terminals (and Windows via WSL), with persistent high scores.
 
 **Why this exists.** Existing terminal falling-block clones fall into two buckets: (a) toys with non-standard rotation and wrong scoring that feel "off" to anyone who has played the mainstream game, and (b) heavy GUI ports that require a windowing stack. There is a genuine niche for a *correct-enough*, lightweight, keyboard-only terminal game — fast to launch, zero deps beyond a single binary, and faithful enough to Guideline mechanics that muscle memory from mainstream play transfers cleanly for the core move set (movement, rotation with kicks, drops, line clears). This project exists to fill that niche.
 
-**Guideline-compliance honesty.** v0.1 is explicitly **Guideline-inspired, not fully Guideline-compliant**. v0.1 ships: SRS rotation with JLSTZ + I kick tables, 7-bag, ghost, next-preview, Guideline-style scoring for non-T-spin clears including Back-to-Back-Tetris, lock delay w/ reset cap. v0.1 does **not** ship: hold piece, T-spin detection/scoring, combo counter, color themes, configurable timings via a file — these are v0.2. README and title screen surface this honestly.
+**Guideline-compliance honesty.** v0.1 is explicitly **Guideline-inspired, not fully Guideline-compliant**. v0.1 ships: SRS rotation with JLSTZ + I kick tables, 7-bag, ghost, next-preview, Guideline-style scoring for non-T-spin clears including Back-to-Back 4-line clears, lock delay w/ reset cap. v0.1 does **not** ship: hold piece, T-spin detection/scoring, combo counter, color themes, configurable timings via a file — these are v0.2. README and title screen surface this honestly.
 
 **Non-goals (explicit).** No multiplayer, no netcode, no sound, no GUI. These are out of scope per the brief and must not re-enter the design in disguise (no "stub network module", no audio crate pulled in "for later", no placeholder hold slot in v0.1 state).
 
-## 1a. Legal / trademark posture
+## 1a. Branding
 
-"Tetris" is a registered trademark of The Tetris Company. To avoid distribution risk:
+The project name `blocktxt` is non-derivative. Piece names (I, O, T, S, Z, J, L) refer to their shapes. The SRS rotation system, 7-piece-bag randomizer, and Guideline-style scoring are implemented from their public mathematical specifications — no third-party tables, artwork, or documentation are vendored or referenced by name. Piece color palette is chosen for distinct terminal rendering, not to match any specific canonical set; palette constants live in `render/theme.rs` with a comment noting the independent selection.
 
-- **Distributed name.** The project artifact name, crate name, binary name, and README title use `tetris-tui` only within this repo; the *published* binary and any release artifacts use the neutral name **`blocktxt`** (falling-block terminal game). The internal slug `tetris-tui-1` is retained for filesystem identity but is not used in any user-facing string in published builds.
-- **README wording.** README describes the game as a *"falling-block puzzle terminal game inspired by the Tetris® Guideline"* and carries a footer: *"Tetris® is a registered trademark of The Tetris Company. This project is not affiliated with, endorsed by, or sponsored by The Tetris Company. Piece names (I, O, T, S, Z, J, L) refer to their shapes."* No use of Tetris logos, the word "Tetris" as a product/binary name, or the word "tetromino" in a trademark-suggestive context.
-- **Colors.** Piece color palette is chosen to be visually distinct in terminals, not to replicate the Guideline color set pixel-for-pixel. Palette constants live in `render/theme.rs` with a comment noting the independent selection.
-- **SRS tables.** Kick offsets are encoded from the mathematical definition of SRS (0/R/2/L state offsets) and cross-checked against community references for correctness. We cite "Super Rotation System (SRS)" as the public specification we implement; we do not vendor copyrighted tables or documentation. Each `const` kick array has a comment stating *derivation*, not a copy of an external table.
-- **Release checklist item.** Tagging v0.1.0 requires running `scripts/check-naming.sh` (greps release artifacts for prohibited strings: `Tetris`, `TETRIS`, trademark glyphs not in the footer context). CI runs the same check on `main`.
-
-This posture is revisited for v0.2 only if a TTC interaction occurs.
+**Release checklist item.** Tagging v0.1.0 requires running `scripts/check-naming.sh`, which greps source + release artifacts for the prohibited trademark term and fails the release if any occurrence is found. CI runs the same check on `main`.
 
 ## 2. User stories
 
@@ -191,12 +185,12 @@ Tests cover: single-reset, multi-reset under cap, cap reached mid-air (locks on 
 | Single | 100 × level |
 | Double | 300 × level |
 | Triple | 500 × level |
-| Tetris | 800 × level |
+| 4-line clear | 800 × level |
 
-**Back-to-Back multiplier (authoritative).** A "difficult" clear in v0.1 is only a Tetris (T-spins are v0.2). B2B state:
+**Back-to-Back multiplier (authoritative).** A "difficult" clear in v0.1 is only a 4-line clear (T-spins are v0.2). B2B state:
 
 - `b2b_active = false` at game start.
-- On a Tetris: if `b2b_active` was already true, score this Tetris as `800 × level × 1.5 = 1200 × level`; then set `b2b_active = true` regardless (it was or becomes true). On the **first** Tetris (`b2b_active` was false), score `800 × level` (no multiplier) and set `b2b_active = true`.
+- On a 4-line clear: if `b2b_active` was already true, score this 4-line clear as `800 × level × 1.5 = 1200 × level`; then set `b2b_active = true` regardless (it was or becomes true). On the **first** 4-line clear (`b2b_active` was false), score `800 × level` (no multiplier) and set `b2b_active = true`.
 - On a Single/Double/Triple (non-difficult line clear): score normally and set `b2b_active = false`.
 - On a lock that clears 0 lines: `b2b_active` is **unchanged** (only line clears reset the chain; empty locks neither break nor extend).
 
@@ -328,7 +322,7 @@ Worst-case input-to-visible-change latency: `poll_timeout (≤ 8 ms) + step (sub
 
 - `srs.rs` wall-kick tables and rotation resolution.
 - `bag.rs` 7-bag **aligned-bag** invariants (see §5 test 3).
-- `rules.rs` scoring for single/double/triple/tetris and B2B multiplier including empty-lock-does-not-break rule.
+- `rules.rs` scoring for single/double/triple/4-line-clear and B2B multiplier including empty-lock-does-not-break rule.
 - `rules.rs` gravity formula values at levels 1, 5, 10, 15, 20.
 - `rules.rs` lock-delay full semantics: single-reset, cap-reached-mid-air, timer-expire-airborne (no-op), hard-drop-short-circuit.
 - `rules.rs` soft-drop capped rate (level-varying and cap-binding cases).
@@ -423,6 +417,6 @@ Exit criteria: feature-complete for v0.1 scope; CI matrix green on both OSes; ma
 
 ## 8. Embedded Changelog
 
-- **v0.3 (current)** — Ops & correctness hardening round. Fill in the architecture diagram with concrete component boundaries + contracts (closing the v0.2 placeholder). Rewrite signal handling to be async-signal-safe: handlers only set atomic flags; the main loop performs all terminal I/O (SIGTSTP restore + re-raise, SIGCONT re-enter + redraw, SIGWINCH redraw). Resolve soft-drop conflict to a single model: 20× natural gravity capped at 30 ms/cell. Fully specify lock-delay reset-counter semantics (re-ground behavior, timer-expire-airborne no-op, 15-reset cap, hard-drop short-circuit). Clarify O-piece and I/JLSTZ spawn positions. Specify B2B state machine (empty lock does not break chain; non-Tetris line clear breaks; first Tetris establishes). Harden persistence directory: 0o700 mkdir, symlink/ownership/world-writable validation, fail-closed with in-memory fallback; switch corrupt-file recovery to timestamped `.corrupt.*` backups with a 5-file cap. Cut TOML config file from v0.1 (defer to v0.2) to shrink attack surface. Specify terminal-reality-aware DAS/ARR using held-direction timing + kitty-protocol probe with heuristic fallback. Add legal/IP section: distributed as `blocktxt`, trademark footer, independently-derived SRS tables, release-time naming-check script. Downgrade SSH byte-budget from hard CI gate to benchmark-with-soft-warning; add PTY-based lifecycle + latency tests via `rexpect` (fixes v0.2's broken `stty` harness). Add render-helper unit tests and DAS/ARR parameterized test. Reframe dependency policy from "pinned" to "locked via Cargo.lock" with advisory response cadence.
+- **v0.3 (current)** — Ops & correctness hardening round. Fill in the architecture diagram with concrete component boundaries + contracts (closing the v0.2 placeholder). Rewrite signal handling to be async-signal-safe: handlers only set atomic flags; the main loop performs all terminal I/O (SIGTSTP restore + re-raise, SIGCONT re-enter + redraw, SIGWINCH redraw). Resolve soft-drop conflict to a single model: 20× natural gravity capped at 30 ms/cell. Fully specify lock-delay reset-counter semantics (re-ground behavior, timer-expire-airborne no-op, 15-reset cap, hard-drop short-circuit). Clarify O-piece and I/JLSTZ spawn positions. Specify B2B state machine (empty lock does not break chain; non-4-line-clear breaks; first 4-line clear establishes). Harden persistence directory: 0o700 mkdir, symlink/ownership/world-writable validation, fail-closed with in-memory fallback; switch corrupt-file recovery to timestamped `.corrupt.*` backups with a 5-file cap. Cut TOML config file from v0.1 (defer to v0.2) to shrink attack surface. Specify terminal-reality-aware DAS/ARR using held-direction timing + kitty-protocol probe with heuristic fallback. Add §1a Branding section: distributed as `blocktxt`, independently-derived SRS tables, release-time naming-check script. Downgrade SSH byte-budget from hard CI gate to benchmark-with-soft-warning; add PTY-based lifecycle + latency tests via `rexpect` (fixes v0.2's broken `stty` harness). Add render-helper unit tests and DAS/ARR parameterized test. Reframe dependency policy from "pinned" to "locked via Cargo.lock" with advisory response cadence.
 - **v0.2** — Tighten correctness + ops: fix 7-bag test invariant to aligned bags + max-gap; specify coordinate system, block-out vs lock-out, partial-lock; expand terminal lifecycle to cover SIGINT/SIGTERM/SIGTSTP/SIGCONT/resize/backpressure/setup-rollback; sequence `--reset-scores` prompt before raw mode; pin crate versions + add missing `toml`/`tempfile`/`proptest`/`insta`/`signal-hook`/`assert_cmd` with MSRV 1.75 CI check; harden persistence with `tempfile`, `sync_all`, parent-dir fsync, `0o600` perms, symlink behavior; downgrade claim to "Guideline-inspired"; add measurable SSH responsiveness budgets; reduce team to 2 engineers + 1 sprint-3 QA.
 - **v0.1** — Initial spec. Scope: Rust + ratatui/crossterm; Guideline SRS + 7-bag + ghost + next-preview; Marathon mode; JSON high-score persistence; macOS + Linux CI. Deferred to v0.2: hold piece, T-spin detection, color themes.

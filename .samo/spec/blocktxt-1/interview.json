@@ -1,5 +1,5 @@
 {
-  "slug": "tetris-tui-1",
+  "slug": "blocktxt-1",
   "persona": "Veteran \"TUI game developer\" expert",
   "generated_at": "2026-04-23T03:35:30.092Z",
   "questions": [
@@ -18,7 +18,7 @@
     },
     {
       "id": "rotation-and-rules",
-      "text": "Which Tetris rule set and rotation system should we implement?",
+      "text": "Which rule set and rotation system should we implement?",
       "options": [
         "Modern guideline: SRS rotation, 7-bag randomizer, hold piece, ghost piece, lock delay",
         "Classic NES-style: no hold, no ghost, simple rotation, gravity-only lock",

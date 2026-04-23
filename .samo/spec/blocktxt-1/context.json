@@ -18,7 +18,7 @@
       "risk_flags": []
     },
     {
-      "path": ".samo/spec/tetris-tui-1.archived-2026-04-23T033530Z/state.json",
+      "path": ".samo/spec/blocktxt-1.archived-2026-04-23T033530Z/state.json",
       "bytes": 981,
       "tokens": 246,
       "blob": "8f33aba72e5446c27b4e779f8f9edfdb988674aa",
@@ -26,7 +26,7 @@
       "risk_flags": []
     },
     {
-      "path": ".samo/spec/tetris-tui-1/state.json",
+      "path": ".samo/spec/blocktxt-1/state.json",
       "bytes": 1032,
       "tokens": 258,
       "blob": "634e95f9f3027115edceac8708e2161d8b6cb9ee",

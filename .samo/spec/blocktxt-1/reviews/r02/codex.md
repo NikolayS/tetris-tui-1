@@ -7,7 +7,7 @@ The spec is much stronger than a typical game spec, but the biggest remaining ri
 ## missing-risk
 
 - (major) Persistent state hardening is incomplete: the spec sets 0600 on the score file but does not require creating or validating the data/config directories with private permissions, ownership checks, or symlink-safe parent handling. If the parent directory is world-writable, symlinked, or attacker-controlled, the atomic-file semantics do not protect against path-swap and denial-of-service cases. Define mkdir behavior, expected mode such as 0700 on Unix, owner checks where feasible, and fail-closed behavior for unsafe parents.
-- (major) The spec has no explicit legal/release risk treatment for shipping a product named and described as a Tetris clone with Guideline-inspired mechanics, colors, scoring, and SRS references. This is a real distribution risk, especially once release artifacts are published. Add a trademark/IP section: naming, README wording, asset/color choices, and whether published SRS tables are referenced or independently encoded/tested.
+- (major) The spec has no explicit legal/release risk treatment for shipping a product named and described as a falling-block clone with Guideline-inspired mechanics, colors, scoring, and SRS references. This is a real distribution risk, especially once release artifacts are published. Add a branding section: naming, README wording, asset/color choices, and whether published SRS tables are referenced or independently encoded/tested.
 - (minor) Config parsing errors are logged and defaults are used, but score-file corruption triggers a destructive recovery path that overwrites the previous .bak. This can destroy forensic/debug information and repeatedly discard user data if a parser bug is introduced. Prefer timestamped backups or only overwrite .bak after a successful rename/write sequence is confirmed.
 
 ## weak-implementation
@@ -42,7 +42,7 @@ v0.3 should close the ops gaps: define safe directory creation/validation and pe
     },
     {
       "category": "missing-risk",
-      "text": "The spec has no explicit legal/release risk treatment for shipping a product named and described as a Tetris clone with Guideline-inspired mechanics, colors, scoring, and SRS references. This is a real distribution risk, especially once release artifacts are published. Add a trademark/IP section: naming, README wording, asset/color choices, and whether published SRS tables are referenced or independently encoded/tested.",
+      "text": "The spec has no explicit legal/release risk treatment for shipping a product named and described as a falling-block clone with Guideline-inspired mechanics, colors, scoring, and SRS references. This is a real distribution risk, especially once release artifacts are published. Add a branding section: naming, README wording, asset/color choices, and whether published SRS tables are referenced or independently encoded/tested.",
       "severity": "major"
     },
     {
