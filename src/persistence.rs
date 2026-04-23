@@ -31,6 +31,11 @@ pub enum PersistenceError {
     UnsafeGroupOrOther,
     #[error("data directory is owned by another user")]
     WrongOwner,
+    #[error(
+        "corrupt-backup path exhausted after 1024 attempts; \
+         cannot rename corrupt scores file safely"
+    )]
+    CorruptBackupExhausted,
     #[error("I/O error: {0}")]
     Io(#[from] io::Error),
     #[error("JSON error: {0}")]
@@ -243,18 +248,24 @@ pub fn load(dir: &Path) -> Result<HighScoreStore, PersistenceError> {
         Ok(store) => Ok(store),
         Err(_) => {
             // Rename the corrupt file to a timestamped backup.
-            let backup = unique_corrupt_path(&path);
-            if let Err(e) = fs::rename(&path, &backup) {
-                eprintln!(
-                    "blocktxt: warning: could not rename corrupt \
-                     scores file: {e}"
-                );
-            } else {
-                eprintln!(
-                    "blocktxt: warning: scores file was corrupt; \
-                     renamed to {}",
-                    backup.display()
-                );
+            match unique_corrupt_path(&path) {
+                Ok(backup) => {
+                    if let Err(e) = fs::rename(&path, &backup) {
+                        eprintln!(
+                            "blocktxt: warning: could not rename corrupt \
+                             scores file: {e}"
+                        );
+                    } else {
+                        eprintln!(
+                            "blocktxt: warning: scores file was corrupt; \
+                             renamed to {}",
+                            backup.display()
+                        );
+                    }
+                }
+                Err(e) => {
+                    eprintln!("blocktxt: warning: {e}");
+                }
             }
 
             // Prune old backups — keep at most 5.
@@ -265,13 +276,23 @@ pub fn load(dir: &Path) -> Result<HighScoreStore, PersistenceError> {
     }
 }
 
+/// Cap for the collision-avoidance loop in `unique_corrupt_path`.
+///
+/// Defence-in-depth: even if an adversary pre-creates a large number of
+/// `.corrupt.*` paths, we stop after this many iterations and surface an
+/// explicit error rather than spinning indefinitely.
+const CORRUPT_LOOP_CAP: u64 = 1024;
+
 /// Returns a path like `<base>.corrupt.<ts>` that does not already exist.
 ///
 /// Strategy: try `<stem>.<secs>` first; on collision loop with a counter
 /// suffix (`<stem>.<secs>-<n>` for n = 1, 2, …) until a unique path is
 /// found.  This eliminates the same-nanosecond overwrite window that the
 /// old two-attempt scheme left open.
-pub fn unique_corrupt_path(base: &Path) -> PathBuf {
+///
+/// Returns `Err(PersistenceError::CorruptBackupExhausted)` if the loop
+/// exceeds `CORRUPT_LOOP_CAP` iterations without finding a free slot.
+pub fn unique_corrupt_path(base: &Path) -> Result<PathBuf, PersistenceError> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default();
@@ -282,18 +303,18 @@ pub fn unique_corrupt_path(base: &Path) -> PathBuf {
 
     let candidate = PathBuf::from(format!("{stem}.{secs}"));
     if !candidate.exists() {
-        return candidate;
+        return Ok(candidate);
     }
 
-    // Collision — loop with an incrementing counter suffix.
-    let mut counter: u64 = 1;
-    loop {
+    // Collision — loop with an incrementing counter suffix, capped at 1024.
+    for counter in 1..=CORRUPT_LOOP_CAP {
         let candidate = PathBuf::from(format!("{stem}.{secs}-{counter}"));
         if !candidate.exists() {
-            return candidate;
+            return Ok(candidate);
         }
-        counter += 1;
     }
+
+    Err(PersistenceError::CorruptBackupExhausted)
 }
 
 /// Keeps at most 5 `.corrupt.*` backups, deleting the oldest by mtime.

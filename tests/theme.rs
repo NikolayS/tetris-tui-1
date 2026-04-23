@@ -1,6 +1,7 @@
 //! Tests for `render::theme` — color/glyph detection.
 
 use blocktxt::render::theme::Theme;
+use serial_test::serial;
 
 #[test]
 fn theme_monochrome_when_no_color_flag() {
@@ -12,9 +13,10 @@ fn theme_monochrome_when_no_color_flag() {
 }
 
 #[test]
+#[serial]
 fn theme_monochrome_when_no_color_env() {
     // Temporarily set NO_COLOR in the environment.
-    // Safety: single-threaded test runner for env var manipulation.
+    // `#[serial]` prevents data races with other tests that touch env vars.
     std::env::set_var("NO_COLOR", "1");
     let theme = Theme::detect(false);
     std::env::remove_var("NO_COLOR");
@@ -25,6 +27,7 @@ fn theme_monochrome_when_no_color_env() {
 }
 
 #[test]
+#[serial]
 fn theme_uses_256_color_when_colorterm_truecolor() {
     std::env::remove_var("NO_COLOR");
     std::env::set_var("COLORTERM", "truecolor");
@@ -51,6 +54,7 @@ fn theme_glyphs_are_all_distinct_monochrome() {
 }
 
 #[test]
+#[serial]
 fn theme_detect_no_color_env_empty_string_is_not_set() {
     // Per NO_COLOR spec: the variable must be non-empty to activate.
     // Empty string should NOT activate monochrome.

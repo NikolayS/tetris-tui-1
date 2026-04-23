@@ -228,7 +228,8 @@ fn no_overwrite_corrupt_counter_loops_past_one() {
     fs::write(&c0, b"old0").unwrap();
     fs::write(&c1, b"old1").unwrap();
 
-    let result = persistence::unique_corrupt_path(&base);
+    let result =
+        persistence::unique_corrupt_path(&base).expect("should find a free slot within cap");
     // Must differ from both planted paths.
     assert_ne!(result, c0, "must not reuse bare-ts path");
     assert_ne!(result, c1, "must not reuse counter-1 path");
@@ -290,6 +291,44 @@ fn top_n_is_sorted_descending() {
     assert_eq!(top[0].score, 500);
     assert_eq!(top[1].score, 400);
     assert_eq!(top[2].score, 300);
+}
+
+/// Pre-create 1025 collision paths for a window of seconds and assert the
+/// cap fires with `CorruptBackupExhausted`.
+///
+/// The loop cap is 1024 counter iterations (slots 1..=1024) plus the bare-ts
+/// slot (slot 0), giving 1025 occupied slots per second.  Because
+/// `unique_corrupt_path` calls `SystemTime::now()` internally, the second it
+/// uses may differ from the second we sample here.  We cover a ±3 s window to
+/// make the test robust even across a second boundary.
+#[test]
+fn unique_corrupt_path_cap_fires_after_1024() {
+    let tmp = tempfile::tempdir().unwrap();
+    let dir = data_dir(&tmp);
+    create_dir_mode_0700(&dir).unwrap();
+
+    let now_ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
+    let base = dir.join("scores.json");
+    let stem = format!("{}.corrupt", base.display());
+
+    // Occupy all 1025 slots (bare + 1..=1024) for each second in the window.
+    for ts in now_ts.saturating_sub(3)..=now_ts + 3 {
+        fs::write(format!("{stem}.{ts}"), b"x").unwrap();
+        for i in 1u64..=1024 {
+            fs::write(format!("{stem}.{ts}-{i}"), b"x").unwrap();
+        }
+    }
+
+    let err = persistence::unique_corrupt_path(&base)
+        .expect_err("cap should fire after 1024 counter iterations");
+    assert!(
+        matches!(err, PersistenceError::CorruptBackupExhausted),
+        "expected CorruptBackupExhausted, got: {err}"
+    );
 }
 
 // ── helper ────────────────────────────────────────────────────────────────

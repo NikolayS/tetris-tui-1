@@ -312,7 +312,7 @@ Worst-case input-to-visible-change latency: `poll_timeout (≤ 8 ms) + step (sub
 - **rendering-stack:** Rust + `ratatui` over `crossterm`; double-wide cells; dirty-region diffing.
 - **input-and-timing:** single-threaded main loop; event-driven with 8 ms poll; DAS/ARR synthesized from held_direction timing (terminal-reality-aware); soft drop with 20× gravity capped at 30 ms/cell.
 - **persistence-and-config:** JSON high-scores via `directories` + `tempfile` atomic rename + parent-dir fsync + 0o700 dir + 0o600 file + symlink/ownership validation + timestamped `.corrupt` backups + fail-closed degradation; **TOML config deferred to v0.2**.
-- **legal:** distributed as `blocktxt`; README carries trademark footer; SRS tables encoded from derivation, not vendored.
+- **legal:** distributed as `blocktxt`; README carries branding/naming section; SRS tables encoded from derivation, not vendored.
 
 **v0.1 "nice-to-have" cut line.** IN: 7-bag, next-piece preview, ghost piece. OUT (v0.2): hold piece, T-spin detection, combo, color themes, TOML config.
 
@@ -409,9 +409,9 @@ Exit criteria: feature-complete for v0.1 scope; CI matrix green on both OSes; ma
 
 ### Sprint 4 — Release (converging)
 
-- All: bug bash against manual test plan, fix regressions, finalize README (incl. honest Guideline-inspired scoping, trademark footer, keybinds, install), tag v0.1.0 under distributed name `blocktxt`.
+- All: bug bash against manual test plan, fix regressions, finalize README (incl. honest Guideline-inspired scoping, branding/naming section, keybinds, install), tag v0.1.0 under distributed name `blocktxt`.
 - **Systems/TUI eng:** release profile tuning (`lto = "thin"`, `codegen-units = 1`), binary size check, release artifacts for macOS (arm64 + x86_64) and Linux (x86_64), run naming-check script against the artifact set.
-- **QA eng:** re-run snapshot + PTY suites on release build; sign off on user-story walkthroughs; run trademark grep against README and artifacts.
+- **QA eng:** re-run snapshot + PTY suites on release build; sign off on user-story walkthroughs; run naming-check script against README and artifacts.
 
 **Parallelization map.** After sprint 1, game-logic ↔ systems/TUI are independent because `GameState` is pure and `Renderer` only reads it — interface nailed down in sprint 1. QA in sprint 3 follows both by ~1 day per area.
 

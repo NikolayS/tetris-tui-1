@@ -231,6 +231,66 @@ fn snapshot_game_over_overlay_new_best() {
     insta::assert_snapshot!("game_over_overlay_new_best", buf_to_string(&terminal));
 }
 
+/// HUD rendered in monochrome mode via NO_COLOR env var (no_color flag path).
+///
+/// Uses `Theme::detect(true)` to simulate `--no-color` flag so the test is
+/// env-var-free and therefore safe for parallel execution.
+#[test]
+fn snapshot_hud_no_color_mode() {
+    let state = fake_state();
+    // Simulate NO_COLOR by passing no_color_flag=true; avoids env mutation.
+    let theme = Theme::detect(true);
+
+    let backend = TestBackend::new(20, 15);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            hud::draw(f, f.area(), &state, &theme);
+        })
+        .unwrap();
+
+    insta::assert_snapshot!("hud_no_color_mode", buf_to_string(&terminal));
+}
+
+/// Board view with a locked stack at the bottom and no active piece.
+///
+/// Represents the board state just before the game-over overlay appears:
+/// the stack has reached the top of the visible area.
+#[test]
+fn snapshot_board_view_with_locked_stack() {
+    let clock = Box::new(FakeClock::new(Instant::now()));
+    let mut state = GameState::new(42, clock);
+
+    // Fill the bottom 5 visible rows (board rows 35..40) with locked pieces
+    // using alternating kinds for visual variety.
+    for row in 35..40usize {
+        for col in 0..10usize {
+            let kind = if col % 2 == 0 {
+                PieceKind::I
+            } else {
+                PieceKind::O
+            };
+            state.board.set(col, row, kind);
+        }
+    }
+
+    // No active piece — game-over state just before the overlay.
+    state.active = None;
+
+    let theme = Theme::monochrome();
+    let backend = TestBackend::new(22, 22);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            board_view::draw(f, f.area(), &state, &theme);
+        })
+        .unwrap();
+
+    insta::assert_snapshot!("board_view_with_locked_stack", buf_to_string(&terminal));
+}
+
 /// Board view during phase 1 (flash) of the line-clear animation.
 #[test]
 fn snapshot_line_clear_flash_frame() {

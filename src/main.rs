@@ -16,7 +16,7 @@ use blocktxt::game::state::GameState;
 use blocktxt::input::{InputTranslator, KittySupport};
 use blocktxt::persistence::{self, HighScore, HighScoreStore};
 use blocktxt::render::{self, Theme};
-use blocktxt::{Event as GameEvent, Input, Phase};
+use blocktxt::{Event as GameEvent, Input};
 
 fn main() -> anyhow::Result<()> {
     // Step 1: Parse CLI args (clap derive).
@@ -198,16 +198,6 @@ fn run_loop(
                     if let Err(e) = persistence::save(store, dir) {
                         eprintln!("blocktxt: warning: could not save score: {e}");
                     }
-                }
-            }
-        }
-
-        // If in game-over and player pressed restart, loop continues; step()
-        // handles the Restart input internally.
-        if matches!(state.phase, Phase::GameOver { .. }) {
-            for inp in &inputs {
-                if *inp == Input::Restart {
-                    break;
                 }
             }
         }
