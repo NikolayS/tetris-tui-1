@@ -10,15 +10,17 @@ use clap::Parser;
 
 /// blocktxt — terminal falling-block puzzle game.
 ///
-/// A Guideline-inspired falling-block puzzle game for macOS and Linux.
+/// A falling-block puzzle game for macOS and Linux.
 /// Single-player, keyboard-controlled, no network, no sound.
-///
-/// For trademark information see <https://github.com/NikolayS/tetris-tui-1>.
+/// See <https://github.com/NikolayS/blocktxt-1> for details.
 #[derive(Parser, Debug)]
 #[command(
     name = "blocktxt",
     version,
-    about = "Terminal falling-block puzzle game"
+    about = "A terminal falling-block puzzle game.",
+    long_about = "blocktxt — a terminal falling-block puzzle game. \
+                  Single-player, keyboard-controlled, no network, no sound. \
+                  See https://github.com/NikolayS/blocktxt-1 for details."
 )]
 pub struct Args {
     /// Seed the ChaCha RNG for reproducible piece sequences.
