@@ -10,3 +10,6 @@
 - lead revise retried after timeout (#92)
 
 - user-edit before round 2
+## v0.3 — 2026-04-23T09:05:18.891Z
+
+- Round 2 reviews applied (decisions — accepted: 22, rejected: 0, deferred: 0).

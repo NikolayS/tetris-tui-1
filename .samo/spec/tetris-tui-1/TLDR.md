@@ -7,6 +7,7 @@ See SPEC.md for the full goal statement.
 ## Scope summary
 
 - 1. Goal & why it's needed
+- 1a. Legal / trademark posture
 - 2. User stories
 - 3. Architecture
 - 4. Implementation details
