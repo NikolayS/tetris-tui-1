@@ -1,0 +1,9 @@
+{
+  "round": 1,
+  "status": "running",
+  "seats": {
+    "reviewer_a": "pending",
+    "reviewer_b": "pending"
+  },
+  "started_at": "2026-04-24T04:03:52.948Z"
+}
