@@ -372,3 +372,83 @@ fn board_view_catppuccin_via_arg() {
 
     insta::assert_snapshot!("board_view_catppuccin_via_arg", buf_to_string(&terminal));
 }
+
+// ── new palette snapshots (#012) ──────────────────────────────────────────────
+
+/// Board view rendered with Gruvbox Dark palette.
+#[test]
+fn board_view_gruvbox() {
+    let clock = Box::new(FakeClock::new(std::time::Instant::now()));
+    let mut state = GameState::new(42, clock);
+
+    for row in 37..40usize {
+        for col in 0..10usize {
+            state.board.set(col, row, PieceKind::S);
+        }
+    }
+
+    let theme = Theme::truecolor(Palette::GruvboxDark);
+
+    let backend = TestBackend::new(22, 22);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            board_view::draw(f, f.area(), &state, &theme);
+        })
+        .unwrap();
+
+    insta::assert_snapshot!("board_view_gruvbox", buf_to_string(&terminal));
+}
+
+/// Board view rendered with Nord palette.
+#[test]
+fn board_view_nord() {
+    let clock = Box::new(FakeClock::new(std::time::Instant::now()));
+    let mut state = GameState::new(42, clock);
+
+    for row in 37..40usize {
+        for col in 0..10usize {
+            state.board.set(col, row, PieceKind::S);
+        }
+    }
+
+    let theme = Theme::truecolor(Palette::Nord);
+
+    let backend = TestBackend::new(22, 22);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            board_view::draw(f, f.area(), &state, &theme);
+        })
+        .unwrap();
+
+    insta::assert_snapshot!("board_view_nord", buf_to_string(&terminal));
+}
+
+/// Board view rendered with Dracula palette.
+#[test]
+fn board_view_dracula() {
+    let clock = Box::new(FakeClock::new(std::time::Instant::now()));
+    let mut state = GameState::new(42, clock);
+
+    for row in 37..40usize {
+        for col in 0..10usize {
+            state.board.set(col, row, PieceKind::S);
+        }
+    }
+
+    let theme = Theme::truecolor(Palette::Dracula);
+
+    let backend = TestBackend::new(22, 22);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            board_view::draw(f, f.area(), &state, &theme);
+        })
+        .unwrap();
+
+    insta::assert_snapshot!("board_view_dracula", buf_to_string(&terminal));
+}

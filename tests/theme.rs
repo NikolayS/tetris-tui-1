@@ -1,7 +1,8 @@
 //! Tests for `render::theme` — color/glyph detection.
 
 use blocktxt::render::theme::{
-    Palette, Theme, CM_I, CM_J, CM_L, CM_O, CM_S, CM_T, TN_I, TN_J, TN_L, TN_O, TN_S, TN_T, TN_Z,
+    Palette, Theme, CM_I, CM_J, CM_L, CM_O, CM_S, CM_T, DR_I, DR_Z, GV_I, GV_Z, NO_I, NO_Z, TN_I,
+    TN_J, TN_L, TN_O, TN_S, TN_T, TN_Z,
 };
 use ratatui::style::Color;
 use serial_test::serial;
@@ -154,6 +155,84 @@ fn no_color_overrides_palette() {
         cm.monochrome,
         "CatppuccinMocha: NO_COLOR must yield monochrome"
     );
+}
+
+// ── new palette tests (#012) — Gruvbox Dark, Nord, Dracula ───────────────────
+
+#[test]
+fn palette_parses_gruvbox_dark() {
+    for alias in &["gruvbox-dark", "gruvbox_dark", "gruvbox", "gv"] {
+        let result: Result<Palette, _> = alias.parse();
+        assert_eq!(
+            result.unwrap(),
+            Palette::GruvboxDark,
+            "expected GruvboxDark for alias '{alias}'"
+        );
+    }
+}
+
+#[test]
+fn palette_parses_nord() {
+    for alias in &["nord", "nord-dark"] {
+        let result: Result<Palette, _> = alias.parse();
+        assert_eq!(
+            result.unwrap(),
+            Palette::Nord,
+            "expected Nord for alias '{alias}'"
+        );
+    }
+}
+
+#[test]
+fn palette_parses_dracula() {
+    for alias in &["dracula", "dr"] {
+        let result: Result<Palette, _> = alias.parse();
+        assert_eq!(
+            result.unwrap(),
+            Palette::Dracula,
+            "expected Dracula for alias '{alias}'"
+        );
+    }
+}
+
+#[test]
+fn palette_spec_gruvbox_colors() {
+    // GV_I = #83a598 aqua, GV_Z = #fb4934 red
+    assert_eq!(GV_I, Color::Rgb(131, 165, 152), "GV_I should be #83a598");
+    assert_eq!(GV_Z, Color::Rgb(251, 73, 52), "GV_Z should be #fb4934");
+}
+
+#[test]
+fn palette_spec_nord_colors() {
+    // NO_I = #88c0d0 nord8, NO_Z = #bf616a nord11
+    assert_eq!(NO_I, Color::Rgb(136, 192, 208), "NO_I should be #88c0d0");
+    assert_eq!(NO_Z, Color::Rgb(191, 97, 106), "NO_Z should be #bf616a");
+}
+
+#[test]
+fn palette_spec_dracula_colors() {
+    // DR_I = #8be9fd cyan, DR_Z = #ff5555 red
+    assert_eq!(DR_I, Color::Rgb(139, 233, 253), "DR_I should be #8be9fd");
+    assert_eq!(DR_Z, Color::Rgb(255, 85, 85), "DR_Z should be #ff5555");
+}
+
+#[test]
+fn palette_invalid_lists_all_five() {
+    let result: Result<Palette, String> = "solarized".parse();
+    assert!(result.is_err());
+    let msg = result.unwrap_err();
+    for name in &[
+        "tokyo-night",
+        "catppuccin-mocha",
+        "gruvbox-dark",
+        "nord",
+        "dracula",
+    ] {
+        assert!(
+            msg.contains(name),
+            "error message should list '{name}', got: {msg}"
+        );
+    }
 }
 
 // Keep these imports used (suppress unused-import lint).

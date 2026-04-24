@@ -40,11 +40,11 @@ pub struct Args {
     #[arg(long)]
     pub reset_scores: bool,
 
-    /// Color palette: tokyo-night (default) or catppuccin-mocha.
+    /// Color palette selection.
     #[arg(
         long,
         default_value = "tokyo-night",
-        help = "Color palette: tokyo-night (default) or catppuccin-mocha."
+        help = "Color palette: tokyo-night|catppuccin-mocha|gruvbox-dark|nord|dracula"
     )]
     pub theme: String,
 
