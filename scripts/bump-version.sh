@@ -79,6 +79,11 @@ main() {
   local old_ver
   old_ver="$(current_version)"
 
+  if [[ "${old_ver}" == "${new_version}" ]]; then
+    echo "Already at ${new_version}; no-op."
+    exit 0
+  fi
+
   echo "Bumping ${old_ver} -> ${new_version}"
 
   update_cargo_toml "${root}" "${old_ver}" "${new_version}"

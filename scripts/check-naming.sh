@@ -13,13 +13,26 @@ IFS=$'\n\t'
 # fixture input to validate the detector itself (see tests/cli.rs).
 prohibited="tet""ris"
 
-targets=(README.md Cargo.toml src scripts .github)
+targets=(README.md Cargo.toml src scripts docs .github)
 [[ -f target/release/blocktxt ]] && targets+=(target/release/blocktxt)
 
 fail=0
 for t in "${targets[@]}"; do
   [[ -e "$t" ]] || continue
-  if grep -rn -iE "${prohibited}" "$t" 2>/dev/null; then
+  # Skip binary/image files to avoid false positives in non-text content.
+  if [[ -f "$t" ]]; then
+    case "${t##*.}" in gif|png|jpg|jpeg|ico|webp|wasm|bin) continue ;; esac
+  fi
+  if grep -rn -iE "${prohibited}" \
+      --include='*.rs' \
+      --include='*.toml' \
+      --include='*.md' \
+      --include='*.sh' \
+      --include='*.yml' \
+      --include='*.yaml' \
+      --include='*.txt' \
+      --include='*.json' \
+      "$t" 2>/dev/null; then
     echo "::error::prohibited trademark term found in $t" >&2
     fail=1
   fi

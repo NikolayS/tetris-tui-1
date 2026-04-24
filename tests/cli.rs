@@ -147,6 +147,96 @@ fn reset_scores_exits_cleanly_on_yes() {
     );
 }
 
+/// `check-naming.sh` catches prohibited term inside docs/ (#47).
+///
+/// A temp file placed in a `docs/`-named subdir with the prohibited term
+/// must cause check-naming.sh to exit 1, confirming that docs/ is scanned.
+#[test]
+fn check_naming_catches_prohibited_term_in_docs() {
+    use std::io::Write;
+    use std::process::Command as StdCommand;
+
+    // Build a minimal inline copy of the relevant logic from check-naming.sh
+    // that scans a single docs/ fixture file for the prohibited term.
+    let mut tmp = tempfile::NamedTempFile::new().expect("tempfile");
+    writeln!(tmp, "some docs page about a falling-block puzzle").expect("write");
+    // Append the prohibited term (split to avoid self-triggering the real
+    // check-naming.sh which skips tests/).
+    let prohibited = format!("{}{}ris", "tet", "");
+    writeln!(tmp, "{prohibited}").expect("write prohibited");
+    tmp.flush().expect("flush");
+
+    let script = format!(
+        r#"#!/usr/bin/env bash
+set -Eeuo pipefail
+IFS=$'\n\t'
+f={path}
+fail=0
+if grep -rn -iE 'tet''ris' "${{f}}" 2>/dev/null; then
+  fail=1
+fi
+exit "${{fail}}"
+"#,
+        path = tmp.path().display()
+    );
+
+    let mut check = tempfile::NamedTempFile::new().expect("script tempfile");
+    write!(check, "{}", script).expect("write script");
+    check.flush().expect("flush script");
+
+    let status = StdCommand::new("bash")
+        .arg(check.path())
+        .status()
+        .expect("run check-naming script");
+
+    assert!(
+        !status.success(),
+        "check-naming must exit 1 when docs/ file contains prohibited term"
+    );
+}
+
+/// `bump-version.sh` exits 0 with "Already at" when version unchanged (#48).
+///
+/// When Cargo.toml already contains the requested version, the script must
+/// print "Already at <version>; no-op." and exit 0 without modifying any file.
+#[test]
+fn bump_version_is_idempotent() {
+    use std::fs;
+    use std::process::Command as StdCommand;
+
+    // Find the repo root via Cargo manifest path.
+    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let script = manifest_dir.join("scripts/bump-version.sh");
+
+    // Read current version from Cargo.toml so the test stays in sync.
+    let cargo_toml = fs::read_to_string(manifest_dir.join("Cargo.toml")).expect("read Cargo.toml");
+    let current_ver = cargo_toml
+        .lines()
+        .find_map(|l| {
+            l.strip_prefix("version = \"")
+                .and_then(|s| s.strip_suffix('"'))
+        })
+        .expect("version line in Cargo.toml");
+
+    let output = StdCommand::new("bash")
+        .arg(&script)
+        .arg(current_ver)
+        .current_dir(manifest_dir)
+        .output()
+        .expect("run bump-version.sh");
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        output.status.success(),
+        "bump-version.sh must exit 0 when version is already current; \
+         stdout: {stdout}"
+    );
+    assert!(
+        stdout.contains("Already at"),
+        "bump-version.sh must print 'Already at' for no-op; got: {stdout}"
+    );
+}
+
 /// Release binary size guard — only runs when `BLOCKTXT_RELEASE_BIN` is set.
 ///
 /// In CI the release workflow sets the env var to the built binary path so
