@@ -1,0 +1,98 @@
+{
+  "slug": "multiplayer-v1",
+  "persona": "Veteran \"real-time multiplayer game networking engineer\" expert",
+  "generated_at": "2026-04-24T03:59:03.348Z",
+  "questions": [
+    {
+      "id": "language",
+      "text": "Which implementation language should we use for the client and server runtime?",
+      "options": [
+        "Rust (single codebase client+server, strong perf)",
+        "C++ (industry-standard for realtime netcode)",
+        "Go (simple concurrency, server-authoritative)",
+        "TypeScript/Node (browser client + shared types)",
+        "C# (Unity-friendly, ENet/LiteNetLib ecosystem)",
+        "decide for me",
+        "not sure — defer",
+        "custom"
+      ]
+    },
+    {
+      "id": "topology",
+      "text": "What network topology and authority model should the game use?",
+      "options": [
+        "Dedicated authoritative server (client-server)",
+        "Listen-server (host-as-authority) with P2P clients",
+        "Full peer-to-peer with deterministic lockstep",
+        "Relayed P2P with one elected host",
+        "decide for me",
+        "not sure — defer",
+        "custom"
+      ]
+    },
+    {
+      "id": "sync-model",
+      "text": "Which state-synchronization model fits the gameplay best?",
+      "options": [
+        "Client prediction + server reconciliation + lag compensation",
+        "Deterministic lockstep (input-only sync)",
+        "Rollback netcode (GGPO-style)",
+        "Snapshot interpolation only (no prediction)",
+        "State replication with delta compression (Quake/Source-style)",
+        "decide for me",
+        "not sure — defer",
+        "custom"
+      ]
+    },
+    {
+      "id": "transport",
+      "text": "What transport layer should we target for the wire protocol?",
+      "options": [
+        "Custom UDP with reliability layer (ENet/laminar-style)",
+        "QUIC (reliable+unreliable streams, built-in encryption)",
+        "WebRTC DataChannels (browser-reachable, NAT traversal)",
+        "WebSockets over TCP (simplest, browser-friendly)",
+        "Raw UDP + TCP fallback",
+        "decide for me",
+        "not sure — defer",
+        "custom"
+      ]
+    },
+    {
+      "id": "scale-target",
+      "text": "What player count, tick rate, and latency budget define v0.1 success?",
+      "options": [
+        "2–4 players, 60Hz tick, <50ms RTT (competitive/fighting)",
+        "8–16 players, 30–64Hz tick, <80ms (shooter/arena)",
+        "32–64 players, 20–30Hz tick, <120ms (battle royale)",
+        "100+ players, 10–20Hz tick, <150ms (MMO-lite)",
+        "2 players only, 30Hz, best-effort latency (co-op prototype)",
+        "decide for me",
+        "not sure — defer",
+        "custom"
+      ]
+    }
+  ],
+  "answers": [
+    {
+      "id": "language",
+      "choice": "decide for me"
+    },
+    {
+      "id": "topology",
+      "choice": "decide for me"
+    },
+    {
+      "id": "sync-model",
+      "choice": "decide for me"
+    },
+    {
+      "id": "transport",
+      "choice": "decide for me"
+    },
+    {
+      "id": "scale-target",
+      "choice": "decide for me"
+    }
+  ]
+}

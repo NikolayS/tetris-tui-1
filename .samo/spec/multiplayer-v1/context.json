@@ -1,0 +1,747 @@
+{
+  "phase": "draft",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 3234,
+      "tokens": 804,
+      "blob": "9eda6fd2640ec6571928d92f393260b3d1f998f5",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "Cargo.toml",
+      "bytes": 1019,
+      "tokens": 255,
+      "blob": "2b6888fc75254582c1125bea541bc3655a8a495f",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "docs/manual-test-plan.md",
+      "bytes": 2269,
+      "tokens": 564,
+      "blob": "6f1e320f06fdb2fdd48a1ddbc65dfeb1038376e8",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "src/game/state.rs",
+      "bytes": 32191,
+      "tokens": 7411,
+      "blob": "126d986201f29c7e9e895acb67ba4259e8b38405",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "src/main.rs",
+      "bytes": 14260,
+      "tokens": 3506,
+      "blob": "b81f945dc03cc321b3c6bc3f5faea38e02b8442a",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "src/persistence.rs",
+      "bytes": 12796,
+      "tokens": 3009,
+      "blob": "c1c8151d723543b00636df8044e7c41ce35b1105",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "src/render/hud.rs",
+      "bytes": 11504,
+      "tokens": 2874,
+      "blob": "8b6d82b4eb168823aeed5e4ceb8d03f88a5da0d3",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "src/render/mod.rs",
+      "bytes": 4668,
+      "tokens": 1166,
+      "blob": "48f30f5e431b223e8b499ef026a881b9b695633d",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "src/render/title.rs",
+      "bytes": 8554,
+      "tokens": 1738,
+      "blob": "ae3ab0e4e0279d400cf782536024dd04af4995c7",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "tests/anim.rs",
+      "bytes": 8205,
+      "tokens": 1928,
+      "blob": "22b64ecaf03415545199c8cc5bc0803c40770b93",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "tests/headless_gameloop.rs",
+      "bytes": 3159,
+      "tokens": 788,
+      "blob": "7560da57bc61e94552b5f2039e7e9dca85f12f46",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "tests/juice.rs",
+      "bytes": 12208,
+      "tokens": 2928,
+      "blob": "b5ca384dfed66707f3b5b2f050091aaf3739b2ac",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "tests/render_snapshots.rs",
+      "bytes": 11847,
+      "tokens": 2882,
+      "blob": "95d97fd746ab6a75cc6b991c4eeae377412247d3",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "tests/resize.rs",
+      "bytes": 3690,
+      "blob": "b76a6ecdf2f941c261623ca0a6005e10e91ca5a8",
+      "included": false,
+      "gist_id": "b76a6ecdf2f941c261623ca0a6005e10e91ca5a8.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__board_view_catppuccin_via_arg.snap",
+      "bytes": 873,
+      "tokens": 147,
+      "blob": "39a26d4294c750e5608f635c074da8741e7ab347",
+      "included": true,
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__game_over_overlay_regular.snap",
+      "bytes": 562,
+      "blob": "34b7cf0296da097c81969d0a4b95333e4d45c44d",
+      "included": false,
+      "gist_id": "34b7cf0296da097c81969d0a4b95333e4d45c44d.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__hud_with_score.snap",
+      "bytes": 572,
+      "blob": "ad0768f51439281c2f7504369824de63494ce599",
+      "included": false,
+      "gist_id": "ad0768f51439281c2f7504369824de63494ce599.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__line_clear_flash_frame.snap",
+      "bytes": 793,
+      "blob": "5c69ea81699a5f78c232983032cd414239d62970",
+      "included": false,
+      "gist_id": "5c69ea81699a5f78c232983032cd414239d62970.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/resize__minimum_viable_size.snap",
+      "bytes": 1780,
+      "blob": "7cc3df77472d18c763fb23891d0df376f254a61c",
+      "included": false,
+      "gist_id": "7cc3df77472d18c763fb23891d0df376f254a61c.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/resize__normal_size.snap",
+      "bytes": 2500,
+      "blob": "c7dda256d9a70e17741819c1955b42117c59ff1d",
+      "included": false,
+      "gist_id": "c7dda256d9a70e17741819c1955b42117c59ff1d.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/title_screen__render_tests__title_empty_leaderboard.snap",
+      "bytes": 2765,
+      "blob": "4bad76fd3959fe9d202f839bb81b740b6048ec99",
+      "included": false,
+      "gist_id": "4bad76fd3959fe9d202f839bb81b740b6048ec99.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/title_screen__render_tests__title_with_scores.snap",
+      "bytes": 2769,
+      "blob": "359620a2dc8b7b5221c4b82a697e40329675511c",
+      "included": false,
+      "gist_id": "359620a2dc8b7b5221c4b82a697e40329675511c.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/state.rs",
+      "bytes": 16676,
+      "blob": "f722cf351bc2784a4a2be707679a098504d1fddf",
+      "included": false,
+      "gist_id": "f722cf351bc2784a4a2be707679a098504d1fddf.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/title_screen.rs",
+      "bytes": 7998,
+      "blob": "cd82a6ecb31963b891fab85dfaf74c357973a112",
+      "included": false,
+      "gist_id": "cd82a6ecb31963b891fab85dfaf74c357973a112.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/lib.rs",
+      "bytes": 326,
+      "blob": "234da341fbce9e7133ce14a97cb96fc4e1dae7eb",
+      "included": false,
+      "gist_id": "234da341fbce9e7133ce14a97cb96fc4e1dae7eb.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/render/board_view.rs",
+      "bytes": 8702,
+      "blob": "bd42b73fd9308f7f0de356a7bcf81e532434c630",
+      "included": false,
+      "gist_id": "bd42b73fd9308f7f0de356a7bcf81e532434c630.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/cli.rs",
+      "bytes": 4267,
+      "blob": "1a2bb266c6554a5369277e7986ad93ffee725ef5",
+      "included": false,
+      "gist_id": "1a2bb266c6554a5369277e7986ad93ffee725ef5.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/render/theme.rs",
+      "bytes": 11470,
+      "blob": "41e7096debd0bbfe72eb7080100779e746b149de",
+      "included": false,
+      "gist_id": "41e7096debd0bbfe72eb7080100779e746b149de.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/theme.rs",
+      "bytes": 5098,
+      "blob": "d4f4da53776c5ce969f54f8c77dd5b33915e9f1d",
+      "included": false,
+      "gist_id": "d4f4da53776c5ce969f54f8c77dd5b33915e9f1d.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "bytes": 3327,
+      "blob": "dee428da4a5a7694446d0bc4c4c619f0bb6886a3",
+      "included": false,
+      "gist_id": "dee428da4a5a7694446d0bc4c4c619f0bb6886a3.md",
+      "risk_flags": []
+    },
+    {
+      "path": "scripts/bump-version.sh",
+      "bytes": 3064,
+      "blob": "0efa878591c6cdaf5593a2bd6b13e0620dc51905",
+      "included": false,
+      "gist_id": "0efa878591c6cdaf5593a2bd6b13e0620dc51905.md",
+      "risk_flags": []
+    },
+    {
+      "path": "scripts/check-naming.sh",
+      "bytes": 1271,
+      "blob": "3f43f880f85726d87e1ca36ef54fb2c2905ca4ec",
+      "included": false,
+      "gist_id": "3f43f880f85726d87e1ca36ef54fb2c2905ca4ec.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/cli.rs",
+      "bytes": 8883,
+      "blob": "f514d75614d7c337a7efd66bb4dbda468766e408",
+      "included": false,
+      "gist_id": "f514d75614d7c337a7efd66bb4dbda468766e408.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__board_view_empty.snap",
+      "bytes": 769,
+      "blob": "11a3b6f47739058aa4ca1f15bdca010c6d5e5267",
+      "included": false,
+      "gist_id": "11a3b6f47739058aa4ca1f15bdca010c6d5e5267.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__board_view_with_active_piece_and_ghost.snap",
+      "bytes": 889,
+      "blob": "c26546887325f212edcdd35229ffd94453e5de21",
+      "included": false,
+      "gist_id": "c26546887325f212edcdd35229ffd94453e5de21.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__board_view_with_locked_stack.snap",
+      "bytes": 953,
+      "blob": "6477cf24d6318d91f496a860bf5b8c765e450e25",
+      "included": false,
+      "gist_id": "6477cf24d6318d91f496a860bf5b8c765e450e25.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__game_over_overlay_new_best.snap",
+      "bytes": 652,
+      "blob": "e1cc44f93298a55b3a1c30ca1491d724a7b98c1a",
+      "included": false,
+      "gist_id": "e1cc44f93298a55b3a1c30ca1491d724a7b98c1a.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__hud_empty_state.snap",
+      "bytes": 572,
+      "blob": "225343d63c4b91fbe75ebbaabd25006683266653",
+      "included": false,
+      "gist_id": "225343d63c4b91fbe75ebbaabd25006683266653.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__hud_no_color_mode.snap",
+      "bytes": 572,
+      "blob": "225343d63c4b91fbe75ebbaabd25006683266653",
+      "included": false,
+      "gist_id": "225343d63c4b91fbe75ebbaabd25006683266653.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/render_snapshots__hud_paused.snap",
+      "bytes": 604,
+      "blob": "9a0d279142d2331526bd2a2fef78ace8c060bebe",
+      "included": false,
+      "gist_id": "9a0d279142d2331526bd2a2fef78ace8c060bebe.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/snapshots/resize__too_small_overlay.snap",
+      "bytes": 292,
+      "blob": "7493c6d61bc51f3f99d071678614c11d7caaeaad",
+      "included": false,
+      "gist_id": "7493c6d61bc51f3f99d071678614c11d7caaeaad.md",
+      "risk_flags": []
+    },
+    {
+      "path": "Justfile",
+      "bytes": 1757,
+      "blob": "4a9ac06a51f4770b496ffe3eb5c75531d060f95d",
+      "included": false,
+      "gist_id": "4a9ac06a51f4770b496ffe3eb5c75531d060f95d.md",
+      "risk_flags": []
+    },
+    {
+      "path": "CHANGELOG.md",
+      "bytes": 4288,
+      "blob": "1816f06886e81885c92e32c0af953a2e03621a75",
+      "included": false,
+      "gist_id": "1816f06886e81885c92e32c0af953a2e03621a75.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/das_arr_stress.rs",
+      "bytes": 8452,
+      "blob": "5abcc1746ca36892e912439bae053da18ea90a78",
+      "included": false,
+      "gist_id": "5abcc1746ca36892e912439bae053da18ea90a78.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/e2e_gameplay.rs",
+      "bytes": 8371,
+      "blob": "023168fa0d87e6b7c8745f55006635c8e2b2cd34",
+      "included": false,
+      "gist_id": "023168fa0d87e6b7c8745f55006635c8e2b2cd34.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/persistence_regression.rs",
+      "bytes": 7881,
+      "blob": "972af04d44b65fe8042427d6dfa35259ba85ffd8",
+      "included": false,
+      "gist_id": "972af04d44b65fe8042427d6dfa35259ba85ffd8.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/signal_lifecycle_rexpect.rs",
+      "bytes": 4511,
+      "blob": "fc22d897764c04a5dd6c1b6b553f7fe0c209a63f",
+      "included": false,
+      "gist_id": "fc22d897764c04a5dd6c1b6b553f7fe0c209a63f.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/terminal_lifecycle.rs",
+      "bytes": 5736,
+      "blob": "983424a47b2ddfff590d01b0ec7278ac77d66c75",
+      "included": false,
+      "gist_id": "983424a47b2ddfff590d01b0ec7278ac77d66c75.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/SPEC.md",
+      "bytes": 44617,
+      "blob": "728f9306a6ebd5a74bfb85024b0f9adb7d046042",
+      "included": false,
+      "gist_id": "728f9306a6ebd5a74bfb85024b0f9adb7d046042.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/persistence.rs",
+      "bytes": 11866,
+      "blob": "6af5bac12f0c690bfb5a62ba93f11284d3a2a986",
+      "included": false,
+      "gist_id": "6af5bac12f0c690bfb5a62ba93f11284d3a2a986.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/input.rs",
+      "bytes": 12798,
+      "blob": "fd3bd30faba1c8b350e7bc97daaf091c31f7fdd0",
+      "included": false,
+      "gist_id": "fd3bd30faba1c8b350e7bc97daaf091c31f7fdd0.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/das_arr.rs",
+      "bytes": 8825,
+      "blob": "997908b2ed271fdffc9b609f2ed2d46af3efcc5d",
+      "included": false,
+      "gist_id": "997908b2ed271fdffc9b609f2ed2d46af3efcc5d.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/persistence_integration.rs",
+      "bytes": 6292,
+      "blob": "cebb5b7e5b3ed583cb1fb113365a0df28febed5c",
+      "included": false,
+      "gist_id": "cebb5b7e5b3ed583cb1fb113365a0df28febed5c.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/TLDR.md",
+      "bytes": 324,
+      "blob": "2c63960c85bb090e13dee6a8449c064dd5dabfcf",
+      "included": false,
+      "gist_id": "2c63960c85bb090e13dee6a8449c064dd5dabfcf.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/architecture.json",
+      "bytes": 51,
+      "blob": "f46cd6309bdb47c84722cf29c1b07dc9f5596aac",
+      "included": false,
+      "gist_id": "f46cd6309bdb47c84722cf29c1b07dc9f5596aac.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/changelog.md",
+      "bytes": 446,
+      "blob": "b37753c15a2df694061aa092ad4d37b60b434137",
+      "included": false,
+      "gist_id": "b37753c15a2df694061aa092ad4d37b60b434137.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/context.json",
+      "bytes": 985,
+      "blob": "4f469c374f8a6dd37d6622b8db0330c7f65e1903",
+      "included": false,
+      "gist_id": "4f469c374f8a6dd37d6622b8db0330c7f65e1903.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/decisions.md",
+      "bytes": 8295,
+      "blob": "284936e8cf95290a176123608106c326e0c9c1fb",
+      "included": false,
+      "gist_id": "284936e8cf95290a176123608106c326e0c9c1fb.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/interview.json",
+      "bytes": 3039,
+      "blob": "552d55fb58913d6bed2a85f67096e6e45fef803d",
+      "included": false,
+      "gist_id": "552d55fb58913d6bed2a85f67096e6e45fef803d.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/reviews/r01/claude.md",
+      "bytes": 13956,
+      "blob": "6950c455cf7ab0c1febdb9777c638258fe6be82b",
+      "included": false,
+      "gist_id": "6950c455cf7ab0c1febdb9777c638258fe6be82b.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/reviews/r01/codex.md",
+      "bytes": 8592,
+      "blob": "a27e417cbf7bde2b6d558050ec2c21ff40323412",
+      "included": false,
+      "gist_id": "a27e417cbf7bde2b6d558050ec2c21ff40323412.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/reviews/r01/round.json",
+      "bytes": 882,
+      "blob": "6071f7d4b3b313eded3c4578e49464e934eff090",
+      "included": false,
+      "gist_id": "6071f7d4b3b313eded3c4578e49464e934eff090.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/reviews/r02/claude.md",
+      "bytes": 15149,
+      "blob": "cd2eb085148f2af32d917819dde3a609d6d5d144",
+      "included": false,
+      "gist_id": "cd2eb085148f2af32d917819dde3a609d6d5d144.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/reviews/r02/codex.md",
+      "bytes": 11044,
+      "blob": "ea2cee29968bc2662b9f688f340999ec3bbc2010",
+      "included": false,
+      "gist_id": "ea2cee29968bc2662b9f688f340999ec3bbc2010.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/reviews/r02/round.json",
+      "bytes": 196,
+      "blob": "c51e6d18216572002b8a4ae2585d084b750ba1fd",
+      "included": false,
+      "gist_id": "c51e6d18216572002b8a4ae2585d084b750ba1fd.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/blocktxt-1/state.json",
+      "bytes": 1135,
+      "blob": "637c608e612194a874ff826c995882528407065d",
+      "included": false,
+      "gist_id": "637c608e612194a874ff826c995882528407065d.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/game/bag.rs",
+      "bytes": 1649,
+      "blob": "3d8820e381a896da4c6385e5a900450913e0910a",
+      "included": false,
+      "gist_id": "3d8820e381a896da4c6385e5a900450913e0910a.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/game/rules.rs",
+      "bytes": 7275,
+      "blob": "f9d62c57b6cc99ea0357485a1ea2a925f348db15",
+      "included": false,
+      "gist_id": "f9d62c57b6cc99ea0357485a1ea2a925f348db15.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/srs_rotation.rs",
+      "bytes": 8600,
+      "blob": "0ca5d822663b2e75c14f71628f65cbec9ae1dd04",
+      "included": false,
+      "gist_id": "0ca5d822663b2e75c14f71628f65cbec9ae1dd04.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/game/board.rs",
+      "bytes": 3008,
+      "blob": "db5d7bac6e40943169763d67f0593d2ce41377af",
+      "included": false,
+      "gist_id": "db5d7bac6e40943169763d67f0593d2ce41377af.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/render/helpers.rs",
+      "bytes": 2653,
+      "blob": "55edb4b62fe1443a2caed4d2e81fb8d9135cf61e",
+      "included": false,
+      "gist_id": "55edb4b62fe1443a2caed4d2e81fb8d9135cf61e.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/render_helpers.rs",
+      "bytes": 4380,
+      "blob": "2c6c96a0a0f37465d2a243685df196b6539f05c7",
+      "included": false,
+      "gist_id": "2c6c96a0a0f37465d2a243685df196b6539f05c7.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/game/mod.rs",
+      "bytes": 86,
+      "blob": "c967dd98166f16bd990cafdba7a4693ffcebe56a",
+      "included": false,
+      "gist_id": "c967dd98166f16bd990cafdba7a4693ffcebe56a.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/rules.rs",
+      "bytes": 7260,
+      "blob": "d6d7e912401120caf6e190114a4d815d3cbf961b",
+      "included": false,
+      "gist_id": "d6d7e912401120caf6e190114a4d815d3cbf961b.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/game/piece.rs",
+      "bytes": 8655,
+      "blob": "00b1cb647930b6fa650aa69c8e7662f07ea6d12e",
+      "included": false,
+      "gist_id": "00b1cb647930b6fa650aa69c8e7662f07ea6d12e.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/game/srs.rs",
+      "bytes": 7537,
+      "blob": "c6ba964df2a3f20efb9a1007c742d30edef3a1a7",
+      "included": false,
+      "gist_id": "c6ba964df2a3f20efb9a1007c742d30edef3a1a7.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/clock.rs",
+      "bytes": 2196,
+      "blob": "82dde58a501229beedbe0027c32c3a409d78cdf9",
+      "included": false,
+      "gist_id": "82dde58a501229beedbe0027c32c3a409d78cdf9.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/clock.rs",
+      "bytes": 1820,
+      "blob": "37f951c3aad6af38fe16a05405ca3950848f0892",
+      "included": false,
+      "gist_id": "37f951c3aad6af38fe16a05405ca3950848f0892.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/bag.rs",
+      "bytes": 5990,
+      "blob": "f5d1f522f86bbc980d9137e104ed152ff18d8b4c",
+      "included": false,
+      "gist_id": "f5d1f522f86bbc980d9137e104ed152ff18d8b4c.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/board.rs",
+      "bytes": 2883,
+      "blob": "fa7fca0bbb2b16215dcbf63be83d94586f3578d2",
+      "included": false,
+      "gist_id": "fa7fca0bbb2b16215dcbf63be83d94586f3578d2.md",
+      "risk_flags": []
+    },
+    {
+      "path": "tests/piece.rs",
+      "bytes": 1756,
+      "blob": "af8b80b2182c08818ae5c45fe4ab3dd79eeef330",
+      "included": false,
+      "gist_id": "af8b80b2182c08818ae5c45fe4ab3dd79eeef330.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/signals.rs",
+      "bytes": 2192,
+      "blob": "9adc059b33d80266711828bc3f096963acdd5d46",
+      "included": false,
+      "gist_id": "9adc059b33d80266711828bc3f096963acdd5d46.md",
+      "risk_flags": []
+    },
+    {
+      "path": "src/terminal.rs",
+      "bytes": 6373,
+      "blob": "37c636ffe7815fc7f637740eaed6304907b7d438",
+      "included": false,
+      "gist_id": "37c636ffe7815fc7f637740eaed6304907b7d438.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 1170,
+      "blob": "ef3f6a0dbbe33607babb1f58173358234810fc75",
+      "included": false,
+      "gist_id": "ef3f6a0dbbe33607babb1f58173358234810fc75.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 8,
+      "blob": "ea8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba",
+      "included": false,
+      "gist_id": "ea8c4bf7f35f6f77f75d92ad8ce8349f6e81ddba.md",
+      "risk_flags": []
+    },
+    {
+      "path": "deny.toml",
+      "bytes": 9789,
+      "blob": "9300aeda7ca68e1489b6dc910086d1967ae5bd41",
+      "included": false,
+      "gist_id": "9300aeda7ca68e1489b6dc910086d1967ae5bd41.md",
+      "risk_flags": []
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "bytes": 66,
+      "blob": "73cb934de4706a914c15e8db2a3c037ce75699d9",
+      "included": false,
+      "gist_id": "73cb934de4706a914c15e8db2a3c037ce75699d9.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/.gitignore",
+      "bytes": 69,
+      "blob": "d9950aaaf117f8af431711029ca05e8e264a6edf",
+      "included": false,
+      "gist_id": "d9950aaaf117f8af431711029ca05e8e264a6edf.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/config.json",
+      "bytes": 1181,
+      "blob": "76bd274e8954d39ab95992dbf92c4c2321f56737",
+      "included": false,
+      "gist_id": "76bd274e8954d39ab95992dbf92c4c2321f56737.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/multiplayer-v1.archived-2026-04-24T035450Z/state.json",
+      "bytes": 2160,
+      "blob": "f7fbb869da35b459315cee56d57a7afd4c1e99bf",
+      "included": false,
+      "gist_id": "f7fbb869da35b459315cee56d57a7afd4c1e99bf.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/multiplayer-v1.archived-2026-04-24T035903Z/state.json",
+      "bytes": 2160,
+      "blob": "acbdabd08ddc72d051a46f14cc96d727980966b8",
+      "included": false,
+      "gist_id": "acbdabd08ddc72d051a46f14cc96d727980966b8.md",
+      "risk_flags": []
+    },
+    {
+      "path": ".samo/spec/multiplayer-v1/state.json",
+      "bytes": 543,
+      "blob": "878e7ae1d79c23e8edf004acc6dff421f01d852e",
+      "included": false,
+      "gist_id": "878e7ae1d79c23e8edf004acc6dff421f01d852e.md",
+      "risk_flags": []
+    }
+  ],
+  "risk_flags": [],
+  "budget": {
+    "phase": "draft",
+    "tokens_used": 30000,
+    "tokens_budget": 30000
+  }
+}
