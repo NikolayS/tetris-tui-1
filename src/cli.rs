@@ -40,6 +40,14 @@ pub struct Args {
     #[arg(long)]
     pub reset_scores: bool,
 
+    /// Color palette: tokyo-night (default) or catppuccin-mocha.
+    #[arg(
+        long,
+        default_value = "tokyo-night",
+        help = "Color palette: tokyo-night (default) or catppuccin-mocha."
+    )]
+    pub theme: String,
+
     /// Trigger a panic after TerminalGuard::enter() for PTY signal tests.
     ///
     /// Hidden from help output. Replaces the ad-hoc args() check from PR #8.

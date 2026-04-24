@@ -12,6 +12,7 @@ use blocktxt::clock::{Clock, FakeClock};
 use blocktxt::game::piece::{Piece, PieceKind, Rotation};
 use blocktxt::game::state::GameState;
 use blocktxt::persistence::{HighScore, HighScoreStore};
+use blocktxt::render::theme::Palette;
 use blocktxt::render::{board_view, hud, Theme};
 use blocktxt::Input;
 
@@ -233,13 +234,13 @@ fn snapshot_game_over_overlay_new_best() {
 
 /// HUD rendered in monochrome mode via NO_COLOR env var (no_color flag path).
 ///
-/// Uses `Theme::detect(true)` to simulate `--no-color` flag so the test is
-/// env-var-free and therefore safe for parallel execution.
+/// Uses `Theme::detect(true, ...)` to simulate `--no-color` flag so the test
+/// is env-var-free and therefore safe for parallel execution.
 #[test]
 fn snapshot_hud_no_color_mode() {
     let state = fake_state();
     // Simulate NO_COLOR by passing no_color_flag=true; avoids env mutation.
-    let theme = Theme::detect(true);
+    let theme = Theme::detect(true, Palette::default());
 
     let backend = TestBackend::new(20, 15);
     let mut terminal = Terminal::new(backend).unwrap();
@@ -326,4 +327,34 @@ fn snapshot_line_clear_flash_frame() {
         .unwrap();
 
     insta::assert_snapshot!("line_clear_flash_frame", buf_to_string(&terminal));
+}
+
+/// Board view rendered with Catppuccin Mocha palette via explicit Palette arg.
+///
+/// Pins the non-default path so a regression in palette routing is caught.
+#[test]
+fn board_view_catppuccin_via_arg() {
+    let clock = Box::new(FakeClock::new(std::time::Instant::now()));
+    let mut state = GameState::new(42, clock);
+
+    // Fill the bottom 3 rows to give something coloured to render.
+    for row in 37..40usize {
+        for col in 0..10usize {
+            state.board.set(col, row, PieceKind::S);
+        }
+    }
+
+    // Explicitly select Catppuccin Mocha (non-default palette).
+    let theme = Theme::truecolor(Palette::CatppuccinMocha);
+
+    let backend = TestBackend::new(22, 22);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            board_view::draw(f, f.area(), &state, &theme);
+        })
+        .unwrap();
+
+    insta::assert_snapshot!("board_view_catppuccin_via_arg", buf_to_string(&terminal));
 }
