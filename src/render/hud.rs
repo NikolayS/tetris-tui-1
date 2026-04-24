@@ -81,11 +81,14 @@ fn draw_stats(frame: &mut Frame, area: Rect, state: &GameState) {
     let label_style = Style::default().fg(SUBTEXT);
     let value_style = Style::default().fg(TEXT).add_modifier(Modifier::BOLD);
 
+    // Use the animated rollup display value rather than the raw score.
+    let displayed_score = state.score_display.current;
+
     let text = Text::from(vec![
         Line::from(vec![
             Span::styled("score  ", label_style),
             Span::styled(
-                format_score(state.score).trim_start().to_string(),
+                format_score(displayed_score).trim_start().to_string(),
                 value_style,
             ),
         ]),
@@ -234,10 +237,24 @@ pub fn draw_pause_overlay(frame: &mut Frame, area: Rect) {
 ///
 /// `state` provides the final score, level, and lines for the summary.
 /// `new_best` triggers a "NEW BEST!" banner in the highlight color.
+///
+/// If `state.gameover_zoom` is active the overlay zooms in from 50 % to 100 %
+/// over 200 ms using inner-padding shrinkage.
 pub fn draw_game_over_overlay(frame: &mut Frame, area: Rect, state: &GameState, new_best: bool) {
     // 11 base lines (9 content + 2 rounded border) + 2 for NEW BEST.
-    let overlay_h = if new_best { 13u16 } else { 11u16 }.min(area.height);
-    let overlay_w = 20u16.min(area.width);
+    let full_h = if new_best { 13u16 } else { 11u16 };
+    let full_w = 20u16;
+
+    // Compute scale from the zoom animation.
+    let scale = state
+        .gameover_zoom
+        .as_ref()
+        .map(|z| z.scale(state.now()))
+        .unwrap_or(1.0);
+
+    // Apply scale to width; height uses full so text doesn't clip.
+    let overlay_w = ((full_w as f32 * scale) as u16).max(4).min(area.width);
+    let overlay_h = full_h.min(area.height);
     let x = area.x + area.width.saturating_sub(overlay_w) / 2;
     let y = area.y + area.height.saturating_sub(overlay_h) / 2;
     let overlay_area = Rect::new(x, y, overlay_w, overlay_h);

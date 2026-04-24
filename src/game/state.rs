@@ -31,6 +31,25 @@ pub const ANIM_DIM_MS: u64 = 100;
 /// Total animation budget: ≤ 200 ms.
 pub const ANIM_TOTAL_MS: u64 = ANIM_FLASH_MS + ANIM_DIM_MS;
 
+// ── Spawn-fade animation constants ────────────────────────────────────────────
+
+/// Phase 1 of spawn fade: 0–40 ms at 60% intensity.
+pub const SPAWN_FADE1_MS: u64 = 40;
+/// Phase 2 of spawn fade: 40–80 ms at 80% intensity.
+pub const SPAWN_FADE2_MS: u64 = 40;
+/// Total spawn-fade budget: 80 ms.
+pub const SPAWN_FADE_TOTAL_MS: u64 = SPAWN_FADE1_MS + SPAWN_FADE2_MS;
+
+// ── Score rollup animation constant ───────────────────────────────────────────
+
+/// Duration over which the displayed score ticks up: 250 ms.
+pub const SCORE_ROLLUP_MS: u64 = 250;
+
+// ── Game-over zoom animation constant ─────────────────────────────────────────
+
+/// Duration of the game-over overlay zoom-in: 200 ms.
+pub const GAMEOVER_ZOOM_MS: u64 = 200;
+
 // ── Line-clear animation state ────────────────────────────────────────────────
 
 /// Three-phase line-clear animation driven by elapsed wall time.
@@ -64,6 +83,94 @@ pub struct LineClearAnim {
     pub pending_level_before: u8,
     /// B2B state before this clear (for scoring).
     pub pending_b2b_active: bool,
+}
+
+// ── Spawn-fade animation state ────────────────────────────────────────────────
+
+/// Spawn-fade animation: tracks how long the newly spawned piece has existed.
+///
+/// - 0–40 ms  → render at 60% intensity.
+/// - 40–80 ms → render at 80% intensity.
+/// - ≥ 80 ms  → full intensity; animation done.
+#[derive(Debug, Clone)]
+pub struct SpawnAnim {
+    /// When the piece became active (from the injected clock).
+    pub started_at: Instant,
+    /// The piece kind being faded in (for renderer to tint correctly).
+    pub kind: PieceKind,
+}
+
+// ── Score rollup state ────────────────────────────────────────────────────────
+
+/// Tracks the rolling display score shown in the HUD.
+///
+/// When a line-clear grants `score_delta`, `target` jumps immediately while
+/// `current` ticks toward it over `SCORE_ROLLUP_MS` ms.
+#[derive(Debug, Clone)]
+pub struct ScoreDisplay {
+    /// The value currently rendered in the HUD.
+    pub current: u32,
+    /// The value we are rolling toward.
+    pub target: u32,
+    /// When the last step advanced `current`.
+    pub last_tick: Instant,
+}
+
+impl ScoreDisplay {
+    /// Create a new display starting at zero.
+    fn new(now: Instant) -> Self {
+        Self {
+            current: 0,
+            target: 0,
+            last_tick: now,
+        }
+    }
+
+    /// Advance `current` toward `target` proportional to `dt`.
+    ///
+    /// Uses a linear interpolation: each millisecond of `dt` advances
+    /// `current` by `(delta / SCORE_ROLLUP_MS)` points (at least 1 if there
+    /// is any remaining delta, to guarantee eventual convergence).
+    pub fn tick(&mut self, dt: Duration) {
+        if self.current >= self.target {
+            self.current = self.target;
+            return;
+        }
+        let remaining = self.target - self.current;
+        let rollup_ms = SCORE_ROLLUP_MS.max(1);
+        let dt_ms = dt.as_millis() as u64;
+        let advance = (remaining as u64 * dt_ms / rollup_ms) as u32;
+        // Always advance at least 1 so we converge even for tiny dt.
+        let advance = advance.max(1).min(remaining);
+        self.current += advance;
+    }
+
+    /// Jump `target` by `delta` and record the current tick time.
+    pub fn add_target(&mut self, delta: u32, now: Instant) {
+        self.target = self.target.saturating_add(delta);
+        self.last_tick = now;
+    }
+}
+
+// ── Game-over zoom state ──────────────────────────────────────────────────────
+
+/// Tracks the zoom-in animation for the game-over overlay.
+///
+/// `scale` goes from 0.5 → 1.0 over `GAMEOVER_ZOOM_MS` ms.
+#[derive(Debug, Clone)]
+pub struct GameOverZoom {
+    /// When the game-over phase began (from the injected clock).
+    pub started_at: Instant,
+}
+
+impl GameOverZoom {
+    /// Return the current scale in [0.5, 1.0].
+    pub fn scale(&self, now: Instant) -> f32 {
+        let elapsed_ms = now.saturating_duration_since(self.started_at).as_millis() as f32;
+        let t = (elapsed_ms / GAMEOVER_ZOOM_MS as f32).clamp(0.0, 1.0);
+        // Scale from 0.5 → 1.0
+        0.5 + 0.5 * t
+    }
 }
 
 // Number of next-pieces kept in the preview queue.
@@ -146,6 +253,23 @@ pub struct GameState {
     /// They are removed when the animation completes (phase 3 transition).
     pub line_clear_anim: Option<LineClearAnim>,
 
+    /// Active spawn-fade animation, if any.
+    ///
+    /// Set whenever a new active piece spawns; cleared after 80 ms.
+    pub spawn_anim: Option<SpawnAnim>,
+
+    /// Rolling score display for the HUD.
+    ///
+    /// Ticks toward `score` over 250 ms. Renderer reads this instead of
+    /// `state.score` directly for the animated rollup effect.
+    pub score_display: ScoreDisplay,
+
+    /// Game-over zoom animation, if any.
+    ///
+    /// Set when `phase` transitions to `Phase::GameOver`; renderer uses
+    /// `scale()` to shrink the overlay at t=0 and grow to full at t=200 ms.
+    pub gameover_zoom: Option<GameOverZoom>,
+
     // Injected clock — stored so tests can share the FakeClock handle.
     clock: Box<dyn Clock>,
 
@@ -155,6 +279,14 @@ pub struct GameState {
 }
 
 impl GameState {
+    /// Return the current clock instant.
+    ///
+    /// Used by the renderer to compute animation phases without taking a
+    /// mutable borrow of the state.
+    pub fn now(&self) -> std::time::Instant {
+        self.clock.now()
+    }
+
     /// Create a new game seeded with `seed`.
     ///
     /// The clock is used to initialise the starting `Instant`; all timing
@@ -172,6 +304,11 @@ impl GameState {
         let active = spawn(first_kind);
 
         let now = clock.now();
+        // Spawn-fade for the very first piece.
+        let spawn_anim = Some(SpawnAnim {
+            started_at: now,
+            kind: first_kind,
+        });
         Self {
             board: Board::empty(),
             active: Some(active),
@@ -187,6 +324,9 @@ impl GameState {
             soft_drop_held: false,
             gravity_acc: Duration::ZERO,
             line_clear_anim: None,
+            spawn_anim,
+            score_display: ScoreDisplay::new(now),
+            gameover_zoom: None,
             clock,
             last_tick: now,
         }
@@ -221,6 +361,20 @@ impl GameState {
                 return events;
             }
             Phase::Playing => {}
+        }
+
+        // ── Tick spawn-fade animation ────────────────────────────────────────
+        if let Some(ref sa) = self.spawn_anim {
+            let now = self.clock.now();
+            let elapsed = now.saturating_duration_since(sa.started_at);
+            if elapsed >= Duration::from_millis(SPAWN_FADE_TOTAL_MS) {
+                self.spawn_anim = None;
+            }
+        }
+
+        // ── Advance score rollup ─────────────────────────────────────────────
+        if self.score_display.current < self.score_display.target {
+            self.score_display.tick(dt);
         }
 
         // ── Tick line-clear animation ────────────────────────────────────────
@@ -456,9 +610,14 @@ impl GameState {
         // Check lock-out: piece entirely above visible playfield (row < 20).
         let all_above = piece.cells().iter().all(|&(_, r)| r < 20);
         if all_above {
+            let now = self.clock.now();
             self.phase = Phase::GameOver {
                 reason: GameOverReason::LockOut,
             };
+            self.gameover_zoom = Some(GameOverZoom { started_at: now });
+            // Snap the rolling display to its target so the HUD behind the
+            // overlay shows the final score immediately (no frozen rollup).
+            self.score_display.current = self.score_display.target;
             events.push(Event::GameOver(GameOverReason::LockOut));
             return;
         }
@@ -548,6 +707,12 @@ impl GameState {
         let b2b_was = anim.pending_b2b_active;
         self.b2b_active = new_b2b;
 
+        // Trigger the score rollup animation.
+        if delta > 0 {
+            let now = self.clock.now();
+            self.score_display.add_target(delta, now);
+        }
+
         if cleared > 0 {
             events.push(Event::LinesCleared {
                 count: cleared,
@@ -576,13 +741,24 @@ impl GameState {
             .iter()
             .any(|&(c, r)| self.board.is_occupied(c, r))
         {
+            let now = self.clock.now();
             self.phase = Phase::GameOver {
                 reason: GameOverReason::BlockOut,
             };
+            self.gameover_zoom = Some(GameOverZoom { started_at: now });
+            // Snap the rolling display to its target so the HUD behind the
+            // overlay shows the final score immediately (no frozen rollup).
+            self.score_display.current = self.score_display.target;
             events.push(Event::GameOver(GameOverReason::BlockOut));
             return;
         }
 
+        // Start spawn-fade for the new active piece.
+        let now = self.clock.now();
+        self.spawn_anim = Some(SpawnAnim {
+            started_at: now,
+            kind,
+        });
         self.active = Some(piece);
     }
 
@@ -598,6 +774,7 @@ impl GameState {
         next_queue.push_back(bag.next().unwrap());
         let active = spawn(first_kind);
 
+        let now = self.clock.now();
         self.board = Board::empty();
         self.active = Some(active);
         self.next_queue = next_queue;
@@ -611,5 +788,11 @@ impl GameState {
         self.soft_drop_held = false;
         self.gravity_acc = Duration::ZERO;
         self.line_clear_anim = None;
+        self.spawn_anim = Some(SpawnAnim {
+            started_at: now,
+            kind: first_kind,
+        });
+        self.score_display = ScoreDisplay::new(now);
+        self.gameover_zoom = None;
     }
 }

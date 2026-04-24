@@ -3,7 +3,7 @@ source: tests/render_snapshots.rs
 expression: buf_to_string(&terminal)
 ---
 ╭ stats ───────────╮
-│score  754        │
+│score  0          │
 ╭ game over ───────╮
 │                  │
 │     Game Over    │

@@ -111,6 +111,9 @@ fn snapshot_hud_with_score() {
     let mut state = GameState::new(42, clock);
     // Inject stats directly via public fields.
     state.score = 100_000;
+    // Also set the rollup display to the same value so the snapshot is stable.
+    state.score_display.current = 100_000;
+    state.score_display.target = 100_000;
     state.level = 5;
     state.lines_cleared = 40;
 
@@ -179,6 +182,10 @@ fn snapshot_game_over_overlay_regular() {
         }
     }
 
+    // Clear the zoom animation so the snapshot captures the final full-size
+    // overlay (not the animated intermediate state).
+    state.gameover_zoom = None;
+
     // Build a store where the existing best (10_000) beats our score (500).
     let mut store = HighScoreStore::new();
     store.insert(HighScore {
@@ -215,6 +222,10 @@ fn snapshot_game_over_overlay_new_best() {
             break;
         }
     }
+
+    // Clear the zoom animation so the snapshot captures the final full-size
+    // overlay (not the animated intermediate state).
+    state.gameover_zoom = None;
 
     // Build an empty store so every score is a new best.
     let store = HighScoreStore::new();

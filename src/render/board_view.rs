@@ -7,9 +7,42 @@ use ratatui::widgets::{Block, BorderType, Borders};
 use ratatui::Frame;
 
 use crate::game::piece::Piece;
-use crate::game::state::{GameState, LineClearPhase};
+use crate::game::state::{GameState, LineClearPhase, SPAWN_FADE1_MS, SPAWN_FADE_TOTAL_MS};
 use crate::render::helpers::ghost_y;
 use crate::render::theme::{Theme, BASE, MANTLE, OVERLAY};
+
+/// Compute the spawn-fade intensity multiplier (0.0–1.0) for the active piece.
+///
+/// - 0–40 ms: 0.60 (60 % intensity)
+/// - 40–80 ms: 0.80 (80 % intensity)
+/// - ≥ 80 ms / no anim: 1.00 (full intensity)
+fn spawn_fade_factor(state: &GameState) -> f32 {
+    use std::time::Duration;
+    let Some(ref sa) = state.spawn_anim else {
+        return 1.0;
+    };
+    let now = state.now();
+    let elapsed = now.saturating_duration_since(sa.started_at);
+    if elapsed >= Duration::from_millis(SPAWN_FADE_TOTAL_MS) {
+        1.0
+    } else if elapsed >= Duration::from_millis(SPAWN_FADE1_MS) {
+        0.8
+    } else {
+        0.6
+    }
+}
+
+/// Dim an RGB color by `factor` (0.0–1.0) by scaling each channel.
+fn dim_color(c: Color, factor: f32) -> Color {
+    match c {
+        Color::Rgb(r, g, b) => Color::Rgb(
+            (r as f32 * factor) as u8,
+            (g as f32 * factor) as u8,
+            (b as f32 * factor) as u8,
+        ),
+        other => other, // non-RGB colors pass through unchanged
+    }
+}
 
 /// Width of one cell in terminal columns (each cell is 2 chars wide).
 const CELL_W: u16 = 2;
@@ -33,7 +66,7 @@ const EMPTY: &str = "  ";
 /// Renders the board inside a rounded border. Inside:
 ///   1. Locked board cells (rows 20..40).
 ///      During a line-clear animation, full rows are highlighted:
-///      - Flash phase: REVERSED + BOLD (inverse video).
+///      - Flash phase: bright white Rgb(255,255,255) + BOLD (eye-catching pop).
 ///      - Dim phase: DIM modifier.
 ///   2. Ghost piece (░░, dimmed) at the drop position.
 ///   3. Active piece (██) at its current position.
@@ -77,13 +110,15 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &GameState, theme: &Theme) {
         let board_row = (vis_row + 20) as usize;
 
         // Determine if this row is being animated.
+        // Flash pop: full-intensity bright white with BOLD (eye-catching pop).
+        // Dim: subdued overlay so the eye is drawn back to the board.
         let anim_style: Option<Style> = anim_rows.and_then(|(rows, phase)| {
             if rows.contains(&board_row) {
                 Some(match phase {
                     LineClearPhase::Flash => Style::default()
-                        .fg(Color::White)
-                        .bg(Color::White)
-                        .add_modifier(Modifier::REVERSED | Modifier::BOLD),
+                        .fg(Color::Rgb(255, 255, 255))
+                        .bg(Color::Rgb(255, 255, 255))
+                        .add_modifier(Modifier::BOLD),
                     LineClearPhase::Dim => Style::default()
                         .fg(OVERLAY)
                         .bg(MANTLE)
@@ -133,20 +168,30 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &GameState, theme: &Theme) {
                 origin: (active.origin.0, ghost_row),
                 ..*active
             };
-            render_piece(frame, inner, &ghost, theme, true);
+            render_piece(frame, inner, &ghost, theme, true, 1.0);
         }
-        render_piece(frame, inner, active, theme, false);
+        let fade = spawn_fade_factor(state);
+        render_piece(frame, inner, active, theme, false, fade);
     }
 }
 
 /// Draw one piece onto the frame area.
 ///
 /// `is_ghost` renders ░░ in the ghost-surface color.
-fn render_piece(frame: &mut Frame, area: Rect, piece: &Piece, theme: &Theme, is_ghost: bool) {
+/// `fade` is a [0.0, 1.0] intensity multiplier for the spawn-fade animation;
+/// use 1.0 for full intensity (non-fading pieces and ghosts).
+fn render_piece(
+    frame: &mut Frame,
+    area: Rect,
+    piece: &Piece,
+    theme: &Theme,
+    is_ghost: bool,
+    fade: f32,
+) {
     let color = if theme.monochrome {
         Color::Reset
     } else {
-        theme.color(piece.kind)
+        dim_color(theme.color(piece.kind), fade)
     };
 
     for (col, row) in piece.cells() {
