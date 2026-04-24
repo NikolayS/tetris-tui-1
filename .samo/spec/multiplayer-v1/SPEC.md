@@ -58,9 +58,9 @@ over:
 - **Peer-to-peer with a host**: needs NAT traversal (STUN/TURN) and one
   peer becomes de-facto authoritative anyway — same cheating surface,
   worse UX.
-- **Pure lockstep**: elegant for identical-input games but Tetris has
-  independent boards; we'd still need a referee for garbage exchange,
-  at which point we're 80 % of the way to server-authoritative.
+- **Pure lockstep**: elegant for identical-input games but a falling-block
+  game has independent boards; we'd still need a referee for garbage
+  exchange, at which point we're 80 % of the way to server-authoritative.
 - **Rollback netcode**: premium experience but a full sprint of work
   we can defer until there's demand.
 
@@ -81,8 +81,8 @@ with the tick budget below.
   scores, incoming-garbage queues, active pieces, phase). Snapshots
   are delta-compressed against the last-acked snapshot per client.
 - No client-side prediction in v1: on LAN / sub-50 ms RTT the
-  round-trip + 2-tick input delay is imperceptible for Tetris-paced
-  play. Prediction is an explicit v2 lever if telemetry shows we need
+  round-trip + 2-tick input delay is imperceptible for falling-block-
+  game-paced play. Prediction is an explicit v2 lever if telemetry shows we need
   it.
 
 ### 2.4 Transport — TLS-terminated WebSocket, binary frames
@@ -129,8 +129,8 @@ with the tick budget below.
    background threads touching the internet, binary size unchanged
    beyond the added multiplayer code path.
 
-4. **Taylor the twitch player** (persona: competitive Tetris player
-   used to Puyo Puyo Tetris / TETR.IO). *Action:* clears a tetris
+4. **Taylor the twitch player** (persona: competitive falling-block
+   player used to Puyo Puyo and TETR.IO). *Action:* clears a quad
    (4-line) while their opponent has a full well. *Outcome:* opponent
    receives 4 garbage rows within one server tick of the flash-phase
    completing, and the garbage-incoming indicator in Taylor's HUD
@@ -280,7 +280,7 @@ them to a minimum tick gap of 1 even when acks stall.
 ### 5.3 Garbage exchange
 
 - Line clears produce `garbage_out = lines_cleared - 1` (standard
-  versus-Tetris rule; single clears send 0). B2B quads send 5.
+  standard versus-mode rule; single clears send 0). B2B quads send 5.
 - Garbage is queued per-recipient on the server. Before the
   recipient's next piece spawn, the server drains the queue by
   inserting up to 8 rows of garbage at the bottom of their board,
