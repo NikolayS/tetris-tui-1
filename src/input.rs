@@ -222,6 +222,7 @@ impl InputTranslator {
             KeyCode::Char(' ') => inputs.push(Input::HardDrop),
             KeyCode::Char('z') => inputs.push(Input::RotateCcw),
             KeyCode::Char('x') => inputs.push(Input::RotateCw),
+            KeyCode::Char('c') => inputs.push(Input::Hold),
             KeyCode::Char('p') => inputs.push(Input::Pause),
             KeyCode::Char('r') => inputs.push(Input::Restart),
             _ => {}

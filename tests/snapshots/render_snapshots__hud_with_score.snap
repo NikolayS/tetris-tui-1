@@ -5,8 +5,8 @@ expression: buf_to_string(&terminal)
 ╭ stats ───────────╮
 │score  100 000    │
 │                  │
-│level  5          │
-│lines  40         │
+╰──────────────────╯
+╭ hold ────────────╮
 │                  │
 ╰──────────────────╯
 ╭ next ────────────╮

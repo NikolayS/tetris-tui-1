@@ -196,6 +196,8 @@ pub enum Input {
     ConfirmYes,
     /// Cancel reset-scores dialog (n).
     ConfirmNo,
+    /// Hold the active piece (Guideline §1a).
+    Hold,
 }
 
 /// Events emitted by `GameState::step` for the application layer.
@@ -253,6 +255,15 @@ pub struct GameState {
     /// The seed this game was started with; reused on Restart so bag order
     /// is reproducible (SPEC §4, #24).
     pub seed: u64,
+
+    /// Hold slot: the kind of the piece currently held, if any.
+    ///
+    /// `None` until the player holds for the first time in a game.
+    pub hold: Option<PieceKind>,
+
+    /// True after a successful hold; prevents holding again until the
+    /// current active piece locks (one hold per piece cycle).
+    pub hold_used_this_cycle: bool,
 
     bag: Bag<StdRng>,
     pub lock_state: Option<LockState>,
@@ -319,6 +330,8 @@ impl GameState {
             b2b_active: false,
             phase: Phase::Title,
             seed,
+            hold: None,
+            hold_used_this_cycle: false,
             bag,
             lock_state: None,
             soft_drop_held: false,
@@ -353,6 +366,8 @@ impl GameState {
         self.level = 1;
         self.lines_cleared = 0;
         self.b2b_active = false;
+        self.hold = None;
+        self.hold_used_this_cycle = false;
         self.bag = bag;
         self.lock_state = None;
         self.soft_drop_held = false;
@@ -496,9 +511,88 @@ impl GameState {
             Input::MoveRight => self.try_shift(1, events),
             Input::RotateCw => self.try_rotate(RotationDir::Cw, events),
             Input::RotateCcw => self.try_rotate(RotationDir::Ccw, events),
+            Input::Hold => self.try_hold(events),
             // Already handled at the phase level; ignore if seen in Playing.
             Input::StartGame | Input::ConfirmYes | Input::ConfirmNo => {}
         }
+    }
+
+    /// Attempt to hold the active piece (Guideline §1a).
+    ///
+    /// Returns immediately (no-op) if:
+    /// - `hold_used_this_cycle` is set (one hold per piece cycle).
+    /// - There is no active piece.
+    ///
+    /// Behaviour:
+    /// - If the hold slot is empty: active goes to hold, next piece spawns
+    ///   from the bag (next_queue).
+    /// - If the hold slot is occupied: active ↔ hold swap. The returning
+    ///   piece respawns at its normal spawn position (Zero rotation).
+    ///
+    /// After a successful hold, `hold_used_this_cycle` is set and
+    /// `lock_state` is cleared (fresh start for the new active piece).
+    fn try_hold(&mut self, events: &mut Vec<Event>) {
+        if self.hold_used_this_cycle {
+            return;
+        }
+        let active = match self.active.take() {
+            Some(p) => p,
+            None => return,
+        };
+        let incoming_kind = match self.hold.take() {
+            Some(prev_kind) => prev_kind,
+            None => {
+                // Hold slot was empty — draw from the bag (next_queue).
+                match self.next_queue.pop_front() {
+                    Some(k) => {
+                        self.next_queue.push_back(self.bag.next().unwrap());
+                        k
+                    }
+                    None => {
+                        // Bag exhausted (should not happen in normal play).
+                        self.active = Some(active);
+                        return;
+                    }
+                }
+            }
+        };
+
+        // Stash the current active piece kind in the hold slot.
+        self.hold = Some(active.kind);
+
+        // Spawn the incoming piece at its standard spawn position.
+        let new_piece = spawn(incoming_kind);
+
+        // Clear lock counters — new piece gets a fresh start.
+        self.lock_state = None;
+        self.gravity_acc = Duration::ZERO;
+
+        // Start spawn-fade animation for the incoming piece.
+        let now = self.clock.now();
+        self.spawn_anim = Some(SpawnAnim {
+            started_at: now,
+            kind: incoming_kind,
+        });
+
+        // Mark hold as used for this piece cycle.
+        self.hold_used_this_cycle = true;
+
+        // Check block-out: spawning into occupied cells ends the game.
+        if new_piece
+            .cells()
+            .iter()
+            .any(|&(c, r)| self.board.is_occupied(c, r))
+        {
+            self.phase = Phase::GameOver {
+                reason: GameOverReason::BlockOut,
+            };
+            self.gameover_zoom = Some(GameOverZoom { started_at: now });
+            self.score_display.current = self.score_display.target;
+            events.push(Event::GameOver(GameOverReason::BlockOut));
+            return;
+        }
+
+        self.active = Some(new_piece);
     }
 
     fn try_shift(&mut self, delta_col: i32, events: &mut Vec<Event>) {
@@ -709,6 +803,8 @@ impl GameState {
         // Reset lock state and gravity accumulator.
         self.lock_state = None;
         self.gravity_acc = Duration::ZERO;
+        // A piece has locked — allow hold again next cycle.
+        self.hold_used_this_cycle = false;
 
         if full_rows.is_empty() {
             // No lines cleared — spawn immediately.
@@ -845,6 +941,8 @@ impl GameState {
         self.lines_cleared = 0;
         self.b2b_active = false;
         self.phase = Phase::Title;
+        self.hold = None;
+        self.hold_used_this_cycle = false;
         let rng = StdRng::seed_from_u64(self.seed);
         self.bag = Bag::new(rng);
         self.lock_state = None;

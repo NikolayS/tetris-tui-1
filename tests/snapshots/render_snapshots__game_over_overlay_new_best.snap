@@ -5,8 +5,8 @@ expression: buf_to_string(&terminal)
 ╭ stats ─────────────╮
 │╭ game over ───────╮│
 ││                  ││
-││     Game Over    ││
-││                  ││
+╰│     Game Over    │╯
+╭│                  │╮
 ││     NEW BEST!    ││
 ╰│                  │╯
 ╭│    score  254    │╮

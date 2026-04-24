@@ -373,7 +373,84 @@ fn board_view_catppuccin_via_arg() {
     insta::assert_snapshot!("board_view_catppuccin_via_arg", buf_to_string(&terminal));
 }
 
-// ── new palette snapshots (#012) ──────────────────────────────────────────────
+// ── hold box snapshots (#62) ──────────────────────────────────────────────────
+
+/// HUD with a piece in the hold slot (not locked).
+#[test]
+fn snapshot_hud_hold_occupied() {
+    use blocktxt::game::piece::PieceKind;
+
+    let clock = Box::new(FakeClock::new(Instant::now()));
+    let mut state = GameState::new(42, clock);
+    state.step(Duration::ZERO, &[blocktxt::Input::StartGame]);
+
+    // Inject a T-piece into the hold slot (unlocked state).
+    state.hold = Some(PieceKind::T);
+    state.hold_used_this_cycle = false;
+
+    let theme = Theme::monochrome();
+    let backend = TestBackend::new(20, 20);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            hud::draw(f, f.area(), &state, &theme);
+        })
+        .unwrap();
+
+    insta::assert_snapshot!("hud_hold_occupied", buf_to_string(&terminal));
+}
+
+/// HUD with an empty hold slot.
+#[test]
+fn snapshot_hud_hold_empty() {
+    let clock = Box::new(FakeClock::new(Instant::now()));
+    let mut state = GameState::new(42, clock);
+    state.step(Duration::ZERO, &[blocktxt::Input::StartGame]);
+
+    // Hold slot is empty (default after StartGame).
+    assert!(state.hold.is_none());
+
+    let theme = Theme::monochrome();
+    let backend = TestBackend::new(20, 20);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            hud::draw(f, f.area(), &state, &theme);
+        })
+        .unwrap();
+
+    insta::assert_snapshot!("hud_hold_empty", buf_to_string(&terminal));
+}
+
+/// HUD with hold slot occupied AND locked (hold_used_this_cycle=true).
+#[test]
+fn snapshot_hud_hold_locked() {
+    use blocktxt::game::piece::PieceKind;
+
+    let clock = Box::new(FakeClock::new(Instant::now()));
+    let mut state = GameState::new(42, clock);
+    state.step(Duration::ZERO, &[blocktxt::Input::StartGame]);
+
+    // Inject a locked hold state.
+    state.hold = Some(PieceKind::I);
+    state.hold_used_this_cycle = true;
+
+    let theme = Theme::monochrome();
+    let backend = TestBackend::new(20, 20);
+    let mut terminal = Terminal::new(backend).unwrap();
+
+    terminal
+        .draw(|f| {
+            hud::draw(f, f.area(), &state, &theme);
+        })
+        .unwrap();
+
+    insta::assert_snapshot!("hud_hold_locked", buf_to_string(&terminal));
+}
+
+// ── new palette snapshots (#61) ───────────────────────────────────────────────
 
 /// Board view rendered with Gruvbox Dark palette.
 #[test]

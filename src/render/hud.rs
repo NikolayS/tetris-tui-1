@@ -34,17 +34,19 @@ pub fn draw_with_scores(
     theme: &Theme,
     high_scores: Option<&HighScoreStore>,
 ) {
-    // Split into sections: stats on top, next preview below.
+    // Split into sections: stats, hold preview, next preview.
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(7), // stats block
+            Constraint::Length(5), // hold box
             Constraint::Min(8),    // next preview
         ])
         .split(area);
 
     draw_stats(frame, chunks[0], state);
-    draw_next_preview(frame, chunks[1], state, theme);
+    draw_hold(frame, chunks[1], state, theme);
+    draw_next_preview(frame, chunks[2], state, theme);
 
     // Overlays (drawn last so they appear on top).
     match &state.phase {
@@ -119,6 +121,72 @@ fn draw_stats(frame: &mut Frame, area: Rect, state: &GameState) {
         )
         .alignment(Alignment::Left);
     frame.render_widget(para, area);
+}
+
+/// Draw the hold-piece box above the next-piece preview.
+///
+/// - Empty hold slot: box with title "hold", no piece rendered.
+/// - Occupied hold slot: renders the held piece shape.
+/// - `hold_used_this_cycle == true`: renders the piece in a dimmer color to
+///   signal the hold is locked until the current piece lands.
+fn draw_hold(frame: &mut Frame, area: Rect, state: &GameState, theme: &Theme) {
+    let locked = state.hold_used_this_cycle;
+    let title_style = if locked {
+        Style::default().fg(OVERLAY)
+    } else {
+        Style::default().fg(SUBTEXT)
+    };
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(OVERLAY))
+        .title(Span::styled(" hold ", title_style))
+        .style(Style::default().bg(BASE));
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    if let Some(kind) = state.hold {
+        let color = if theme.monochrome || locked {
+            Color::Reset
+        } else {
+            theme.color(kind)
+        };
+        let glyph = theme.glyph(kind);
+        let cell_text: String = if theme.monochrome {
+            format!("{}{}", glyph, glyph)
+        } else {
+            "██".to_string()
+        };
+        let cell_style = if theme.monochrome {
+            Style::default().fg(Color::Reset)
+        } else if locked {
+            // Dimmer style to indicate locked hold.
+            Style::default()
+                .fg(color)
+                .bg(BASE)
+                .add_modifier(Modifier::DIM)
+        } else {
+            Style::default().fg(color).bg(BASE)
+        };
+
+        use crate::game::piece::{Piece, Rotation};
+        let piece = Piece {
+            kind,
+            rotation: Rotation::Zero,
+            origin: (0, 0),
+        };
+        for (col, row) in piece.cells() {
+            let x = inner.x + (col as u16) * 2;
+            let y = inner.y + row as u16;
+            if x + 2 > inner.x + inner.width || y >= inner.y + inner.height {
+                continue;
+            }
+            frame.render_widget(
+                Paragraph::new(Span::styled(cell_text.clone(), cell_style)),
+                Rect::new(x, y, 2, 1),
+            );
+        }
+    }
 }
 
 /// Draw next-piece preview showing actual piece shapes for the next 3 pieces.
