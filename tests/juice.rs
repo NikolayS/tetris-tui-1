@@ -338,3 +338,35 @@ fn spawn_anim_kind_matches_active_piece() {
         panic!("Expected both spawn_anim and active to be Some");
     }
 }
+
+/// On game-over, `score_display.current` must snap to `target` so the HUD
+/// behind the overlay shows the final score, not a frozen mid-rollup value.
+///
+/// Reproduces the issue where `step()` returns early in the GameOver branch
+/// before ticking the rollup, leaving `current < target` indefinitely (#54).
+#[test]
+fn score_display_snaps_to_target_on_game_over() {
+    let (mut gs, clock) = make_game(42);
+
+    // Stage a pending rollup: target ahead of current.
+    gs.score_display.current = 100;
+    gs.score_display.target = 1_000;
+
+    // Drive to game over via hard drops.
+    for _ in 0..400 {
+        gs.step(Duration::from_millis(5), &[Input::HardDrop]);
+        clock.advance(Duration::from_millis(5));
+        if matches!(gs.phase, Phase::GameOver { .. }) {
+            break;
+        }
+    }
+
+    assert!(
+        matches!(gs.phase, Phase::GameOver { .. }),
+        "game must be over"
+    );
+    assert_eq!(
+        gs.score_display.current, gs.score_display.target,
+        "current must snap to target on game-over so the HUD does not freeze"
+    );
+}

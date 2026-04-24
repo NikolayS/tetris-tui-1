@@ -615,6 +615,9 @@ impl GameState {
                 reason: GameOverReason::LockOut,
             };
             self.gameover_zoom = Some(GameOverZoom { started_at: now });
+            // Snap the rolling display to its target so the HUD behind the
+            // overlay shows the final score immediately (no frozen rollup).
+            self.score_display.current = self.score_display.target;
             events.push(Event::GameOver(GameOverReason::LockOut));
             return;
         }
@@ -743,6 +746,9 @@ impl GameState {
                 reason: GameOverReason::BlockOut,
             };
             self.gameover_zoom = Some(GameOverZoom { started_at: now });
+            // Snap the rolling display to its target so the HUD behind the
+            // overlay shows the final score immediately (no frozen rollup).
+            self.score_display.current = self.score_display.target;
             events.push(Event::GameOver(GameOverReason::BlockOut));
             return;
         }

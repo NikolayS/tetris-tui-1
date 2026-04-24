@@ -66,7 +66,7 @@ const EMPTY: &str = "  ";
 /// Renders the board inside a rounded border. Inside:
 ///   1. Locked board cells (rows 20..40).
 ///      During a line-clear animation, full rows are highlighted:
-///      - Flash phase: REVERSED + BOLD (inverse video).
+///      - Flash phase: bright white Rgb(255,255,255) + BOLD (eye-catching pop).
 ///      - Dim phase: DIM modifier.
 ///   2. Ghost piece (░░, dimmed) at the drop position.
 ///   3. Active piece (██) at its current position.
