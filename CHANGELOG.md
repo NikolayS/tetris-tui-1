@@ -6,6 +6,84 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.2.0] — 2026-04-24
+
+**Originality pass for trade-dress safety.** *Tetris Holding LLC v.
+Xio Interactive* (2012) named seven specific elements of falling-block
+games as protected look-and-feel: **playfield dimensions, piece-color
+associations, cell glyph style, line-clear animation, next-piece
+preview, ghost-piece style, and locked-piece color persistence.** v0.2.0
+makes blocktxt's implementation of EACH of those seven distinct from
+the protected commercial implementation, while preserving SRS / 7-bag /
+Guideline-style scoring (which are mathematical and not protectable).
+
+This is a **breaking visual change**. High-score files load forward,
+but scores set on the v0.1.x 10×20 playfield are not directly
+comparable to v0.2.x 12×24 scores.
+
+### Changed (originality)
+
+- **Playfield: 10×20 → 12×24** (#63). Wider + taller; spawn positions
+  recentered: O at cols 5+6, JLSTZ/I 4-wide bbox at cols 4..8.
+  `MIN_WIDTH` 44 → 52; `MIN_HEIGHT` 24 → 28.
+- **Piece-color permutation** (#63). Non-Guideline assignments,
+  applied identically across all 5 palettes via `PaletteSlot`
+  indirection: I=orange, O=pink, T=green, S=blue, Z=yellow,
+  J=purple, L=cyan. (Guideline canon: I=cyan, O=yellow, T=purple,
+  S=green, Z=red, J=blue, L=orange.)
+- **Cell glyph: `██` → `▰▰`** (#63). Black Parallelogram (U+25B0)
+  reads as a deliberate dingbat rather than a generic block. Flash
+  glyph during line-clear: `▣▣` (White Square Containing Black Small
+  Square, U+25A3).
+- **Line-clear animation: WipeOutward** (#63). Was Flash + Dim +
+  Collapse; now Flash + WipeOutward (200 ms total, center cells clear
+  first then expand outward).
+- **Next preview: single letter, not miniature board** (#63). Was a
+  5-piece queue rendered as full piece shapes; now a SINGLE next
+  piece shown as its uppercase letter (`I`/`O`/`T`/`S`/`Z`/`J`/`L`)
+  centered in the next box, colored per piece accent.
+- **Ghost piece: floor line, not piece outline** (#63). Was the piece
+  shape rendered with `░░` glyphs at the landing position; now a
+  single horizontal line (`▔▔` per landing column) at 40% intensity.
+  Suppressed when the piece is already at the floor (would overlap
+  its own body).
+- **Locked-piece color: dimmed** (#63). Was full piece accent (same
+  as active); now `dim_color(accent, 0.6)`. Active piece pops above
+  the muted stack.
+
+### Tests
+
+- 223 tests total (up from 214 in v0.1.2). 7 new originality tests
+  pinning each protected-element distinction (`piece_color_mapping_consistent_across_palettes`,
+  `next_preview_shows_only_one_piece`, `ghost_renders_as_floor_line`,
+  `ghost_does_not_render_when_piece_is_already_on_floor`,
+  `locked_pieces_render_dimmer_than_active`,
+  `snapshot_line_clear_wipe_midframe`, etc.). All 17 existing render
+  snapshots intentionally regenerated for the new visual baseline.
+
+### Trade-offs
+
+- The single-piece next preview reduces multi-piece-lookahead
+  strategic depth versus the v0.1.x 5-piece queue. Skilled players
+  used the queue to plan 4-line clears 3–5 pieces ahead.
+- The 12-wide playfield makes I-piece 4-line clears slightly easier
+  (2 extra columns of lateral planning room).
+- Both trade-offs are deliberate per the trade-dress directive.
+
+### Documentation
+
+- SPEC §1a "Branding" extended to document each of the 7 distinctions
+  with rationale + case citation.
+- README "Originality" section added after Credits.
+
+### Known limitations (unchanged)
+
+- macOS `SIGTSTP`/`SIGCONT` round-trip untested via PTY (Linux-only
+  lifecycle tests).
+- Windows: WSL only.
+
+---
+
 ## [0.1.2] — 2026-04-24
 
 Gameplay + visual expansion. Two SPEC §1a v0.2-deferred items land:
