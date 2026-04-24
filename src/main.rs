@@ -15,6 +15,7 @@ use blocktxt::clock::RealClock;
 use blocktxt::game::state::GameState;
 use blocktxt::input::{InputTranslator, KittySupport};
 use blocktxt::persistence::{self, HighScore, HighScoreStore};
+use blocktxt::render::theme::Palette;
 use blocktxt::render::{self, Theme};
 use blocktxt::{Event as GameEvent, Input};
 
@@ -27,6 +28,15 @@ fn main() -> anyhow::Result<()> {
         cli::handle_reset_scores(&args)?;
         return Ok(());
     }
+
+    // Parse --theme early so invalid values exit before entering raw mode.
+    let palette: Palette = match args.theme.parse() {
+        Ok(p) => p,
+        Err(e) => {
+            eprintln!("blocktxt: {e}");
+            std::process::exit(2);
+        }
+    };
 
     // Step 3: Load persistence BEFORE entering raw mode so any warning goes
     //         to stderr while the terminal is still in cooked mode.
@@ -77,6 +87,7 @@ fn main() -> anyhow::Result<()> {
         &mut store,
         persist_dir_path.as_deref(),
         kitty,
+        palette,
     )?;
 
     Ok(())
@@ -90,6 +101,7 @@ fn run_loop(
     store: &mut HighScoreStore,
     persist_dir: Option<&std::path::Path>,
     kitty: KittySupport,
+    palette: Palette,
 ) -> anyhow::Result<()> {
     use nix::sys::signal::{self, Signal};
 
@@ -107,7 +119,7 @@ fn run_loop(
     });
     let clock = Box::new(RealClock);
     let mut state = GameState::new(seed, clock);
-    let theme = Theme::detect(args.no_color);
+    let theme = Theme::detect(args.no_color, palette);
 
     // DAS/ARR input translator.
     let mut translator = InputTranslator::new(kitty);
@@ -227,6 +239,7 @@ fn run_loop(
     _store: &mut HighScoreStore,
     _persist_dir: Option<&std::path::Path>,
     _kitty: KittySupport,
+    _palette: Palette,
 ) -> anyhow::Result<()> {
     Ok(())
 }

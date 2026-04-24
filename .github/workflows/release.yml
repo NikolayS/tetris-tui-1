@@ -20,14 +20,17 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - runner: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-          - os: macos-latest
+          - runner: macos-latest
             target: aarch64-apple-darwin
-          - os: macos-13
+          # Cross-compile Intel binary on ARM runner via rustup target;
+          # macos-13 is deprecated — macos-latest (ARM) handles both
+          # Apple targets without a separate Intel runner.
+          - runner: macos-latest
             target: x86_64-apple-darwin
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Resolve tag
